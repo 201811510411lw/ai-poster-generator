@@ -21,13 +21,13 @@ import {
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
-    primaryColor: "#6C5CE7",
-    primaryColorHover: "#5B50DF",
-    primaryColorPressed: "#4F46E5",
-    primaryColorSuppl: "#8B5CF6",
+    primaryColor: "#F58220",
+    primaryColorHover: "#EA6F10",
+    primaryColorPressed: "#D85F08",
+    primaryColorSuppl: "#FFB347",
     borderRadius: "12px",
-    borderColor: "#E5E7EB",
-    textColorBase: "#111827",
+    borderColor: "#F1E1D0",
+    textColorBase: "#2F1E12",
     bodyColor: "#ffffff",
     cardColor: "#ffffff",
     modalColor: "#ffffff",
@@ -37,14 +37,14 @@ const themeOverrides: GlobalThemeOverrides = {
     borderRadius: "20px",
   },
   Input: {
-    borderHover: "#A78BFA",
-    boxShadowFocus: "0 0 0 3px rgba(108, 92, 231, 0.14)",
+    borderHover: "#FFB347",
+    boxShadowFocus: "0 0 0 3px rgba(245, 130, 32, 0.14)",
   },
   Select: {
     peers: {
       InternalSelection: {
-        borderHover: "#A78BFA",
-        boxShadowFocus: "0 0 0 3px rgba(108, 92, 231, 0.14)",
+        borderHover: "#FFB347",
+        boxShadowFocus: "0 0 0 3px rgba(245, 130, 32, 0.14)",
       },
     },
   },
