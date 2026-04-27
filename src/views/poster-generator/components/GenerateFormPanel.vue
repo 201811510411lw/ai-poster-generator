@@ -1,66 +1,73 @@
 <template>
   <SectionCard title="生成设置" class="min-h-0 flex-1">
-    <n-form label-placement="top" class="flex min-h-0 flex-col gap-3.5">
-      <div class="grid gap-4 xl:grid-cols-[112px_96px_minmax(360px,1fr)]">
-        <n-form-item label="物料类型">
-          <n-select :value="materialType" :options="designerMaterialOptions" @update:value="handleMaterialChange" />
-        </n-form-item>
-        <n-form-item label="输出格式">
-          <n-select v-model:value="outputFormat" :options="formatOptions" />
-        </n-form-item>
-        <n-form-item label="尺寸设置">
-          <div class="grid w-full grid-cols-4 gap-3">
-            <button
-              v-for="preset in sizePresets"
-              :key="preset.key"
-              type="button"
-              class="size-pill"
-              :class="{ 'size-pill-active': isPresetActive(preset) }"
-              @click="applySizePreset(preset)"
-            >
-              <span>{{ preset.label }}</span>
-              <small>{{ preset.width }}x{{ preset.height }}</small>
-            </button>
+    <div class="flex h-full min-h-0 flex-col">
+      <n-form
+        label-placement="top"
+        class="workspace-scroll min-h-0 flex-1 overflow-y-auto pr-1"
+      >
+        <div class="flex flex-col gap-3.5">
+          <div class="grid gap-4 xl:grid-cols-[112px_96px_minmax(360px,1fr)]">
+            <n-form-item label="物料类型">
+              <n-select :value="materialType" :options="designerMaterialOptions" @update:value="handleMaterialChange" />
+            </n-form-item>
+            <n-form-item label="输出格式">
+              <n-select v-model:value="outputFormat" :options="formatOptions" />
+            </n-form-item>
+            <n-form-item label="尺寸设置">
+              <div class="grid w-full grid-cols-4 gap-3">
+                <button
+                  v-for="preset in sizePresets"
+                  :key="preset.key"
+                  type="button"
+                  class="size-pill"
+                  :class="{ 'size-pill-active': isPresetActive(preset) }"
+                  @click="applySizePreset(preset)"
+                >
+                  <span>{{ preset.label }}</span>
+                  <small>{{ preset.width }}x{{ preset.height }}</small>
+                </button>
+              </div>
+            </n-form-item>
           </div>
-        </n-form-item>
-      </div>
 
-      <div v-if="isCustomSize" class="grid gap-4 xl:grid-cols-2">
-        <n-form-item label="自定义宽度">
-          <n-input-number v-model:value="width" :min="1" class="w-full" placeholder="单位 px" />
-        </n-form-item>
-        <n-form-item label="自定义高度">
-          <n-input-number v-model:value="height" :min="1" class="w-full" placeholder="单位 px" />
-        </n-form-item>
-      </div>
+          <div v-if="isCustomSize" class="grid gap-4 xl:grid-cols-2">
+            <n-form-item label="自定义宽度">
+              <n-input-number v-model:value="width" :min="1" class="w-full" placeholder="单位 px" />
+            </n-form-item>
+            <n-form-item label="自定义高度">
+              <n-input-number v-model:value="height" :min="1" class="w-full" placeholder="单位 px" />
+            </n-form-item>
+          </div>
 
-      <div class="grid gap-4 xl:grid-cols-2">
-        <n-form-item label="主标题">
-          <n-input v-model:value="title" placeholder="例如：纯天然好牛奶" />
-        </n-form-item>
-        <n-form-item label="副标题">
-          <n-input v-model:value="subtitle" placeholder="例如：精选优质牧场，全家营养好选择" />
-        </n-form-item>
-      </div>
+          <div class="grid gap-4 xl:grid-cols-2">
+            <n-form-item label="主标题">
+              <n-input v-model:value="title" placeholder="例如：纯天然好牛奶" />
+            </n-form-item>
+            <n-form-item label="副标题">
+              <n-input v-model:value="subtitle" placeholder="例如：精选优质牧场，全家营养好选择" />
+            </n-form-item>
+          </div>
 
-      <n-form-item label="活动说明（选填）">
-        <n-input v-model:value="activityDescription" placeholder="例如：限时特惠，第二件半价" />
-      </n-form-item>
+          <n-form-item label="活动说明（选填）">
+            <n-input v-model:value="activityDescription" placeholder="例如：限时特惠，第二件半价" />
+          </n-form-item>
 
-      <n-form-item label="设计要求（选填）">
-        <n-input
-          v-model:value="designRequirement"
-          type="textarea"
-          :autosize="{ minRows: 1, maxRows: 2 }"
-          maxlength="200"
-          show-count
-          placeholder="例如：突出产品，画面简洁大气，重点突出牛奶的纯净和营养"
-        />
-      </n-form-item>
+          <n-form-item label="设计要求（选填）">
+            <n-input
+              v-model:value="designRequirement"
+              type="textarea"
+              :autosize="{ minRows: 1, maxRows: 2 }"
+              maxlength="200"
+              show-count
+              placeholder="例如：突出产品，画面简洁大气，重点突出牛奶的纯净和营养"
+            />
+          </n-form-item>
+        </div>
+      </n-form>
 
-      <div class="grid gap-3 border-t border-slate-100 pt-3 xl:grid-cols-[1fr_128px]">
+      <div class="mt-4 grid shrink-0 gap-3 border-t border-slate-100 pt-4 xl:grid-cols-[1fr_150px]">
         <n-button
-          class="gradient-button h-10 w-full text-[15px] font-bold"
+          class="gradient-button h-11 w-full text-[15px] font-bold"
           type="primary"
           size="large"
           :loading="generationStatus === 'generating'"
@@ -72,14 +79,14 @@
           </template>
           {{ buttonText }}
         </n-button>
-        <n-button class="h-10 font-bold" size="large" secondary @click="handleReset">
+        <n-button class="h-11 font-bold" size="large" secondary @click="handleReset">
           <template #icon>
             <RotateCcw :size="16" />
           </template>
           重置设置
         </n-button>
       </div>
-    </n-form>
+    </div>
   </SectionCard>
 </template>
 
