@@ -1,7 +1,9 @@
 <template>
   <SectionCard title="素材管理" class="h-full">
     <template #header-extra>
-      <HelpCircle :size="16" class="mt-1 text-slate-400" />
+      <button class="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-[var(--primary)]">
+        <HelpCircle :size="16" />
+      </button>
     </template>
 
     <div class="flex h-full min-h-0 flex-col overflow-hidden">
@@ -15,13 +17,13 @@
         :custom-request="handleCustomUpload"
       >
         <n-upload-dragger>
-          <div class="rounded-2xl border border-dashed border-violet-200 bg-violet-50/30 px-5 py-8 text-center transition hover:border-[var(--primary)] hover:bg-violet-50/60">
+          <div class="rounded-[20px] border border-dashed border-violet-200/80 bg-[linear-gradient(180deg,#ffffff,#fbfaff)] px-5 py-7 text-center transition hover:border-[var(--primary)] hover:bg-violet-50/40">
             <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200">
-              <Upload :size="24" />
+              <Upload :size="23" />
             </div>
-            <div class="mt-4 text-sm font-semibold text-slate-700">拖拽或点击上传素材</div>
-            <p class="mt-2 text-xs leading-5 text-slate-400">支持 JPG / PNG，最大 20MB</p>
-            <n-button class="gradient-button mt-5 h-9 px-5" type="primary">
+            <div class="mt-4 text-sm font-bold text-slate-700">拖拽或点击上传素材</div>
+            <p class="mt-2 text-xs leading-5 text-slate-400">支持 JPG / PNG 格式，最大 20MB</p>
+            <n-button class="gradient-button mt-5 h-9 px-5 text-xs font-bold" type="primary">
               <template #icon>
                 <PlusCircle :size="15" />
               </template>
@@ -31,8 +33,8 @@
         </n-upload-dragger>
       </n-upload>
 
-      <div class="mt-6 flex shrink-0 items-center justify-between border-b border-slate-100 pb-3">
-        <button class="border-b-2 border-[var(--primary)] pb-3 text-sm font-semibold text-[var(--primary)]">
+      <div class="mt-5 flex shrink-0 items-center justify-between border-b border-slate-100 pb-3">
+        <button class="border-b-2 border-[var(--primary)] pb-3 text-sm font-bold text-[var(--primary)]">
           全部素材({{ assets.length }})
         </button>
         <n-select
@@ -49,9 +51,9 @@
           <article
             v-for="asset in filteredAssets"
             :key="asset.id"
-            class="group rounded-2xl border border-slate-200 bg-white p-2 transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_12px_28px_rgba(79,70,229,0.10)]"
+            class="group rounded-2xl border border-slate-200/80 bg-white p-2.5 transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_28px_rgba(79,70,229,0.10)]"
           >
-            <div class="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
+            <div class="relative aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
               <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" />
               <n-button
                 class="absolute right-2 top-2 opacity-0 transition group-hover:opacity-100"
@@ -66,10 +68,10 @@
                 </template>
               </n-button>
             </div>
-            <div class="mt-2 min-w-0">
-              <div class="truncate text-xs font-medium text-slate-600" :title="asset.filename">{{ asset.filename }}</div>
+            <div class="mt-2.5 min-w-0">
+              <div class="truncate text-xs font-semibold text-slate-600" :title="asset.filename">{{ asset.filename }}</div>
               <div class="mt-2 flex items-center justify-between gap-2">
-                <span class="rounded-md bg-violet-50 px-2 py-1 text-[11px] font-medium text-[var(--primary)]">
+                <span class="asset-chip">
                   {{ assetTypeLabelMap[asset.assetType] }}
                 </span>
                 <n-popselect
@@ -77,7 +79,7 @@
                   :options="assetTypeSelectOptions"
                   @update:value="(value) => store.updateAssetType(asset.id, value)"
                 >
-                  <button class="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+                  <button class="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
                     <SlidersHorizontal :size="13" />
                   </button>
                 </n-popselect>
@@ -86,16 +88,16 @@
           </article>
         </div>
 
-        <div v-else class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
+        <div v-else class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center">
           <ImageIcon :size="24" class="mx-auto text-slate-300" />
-          <div class="mt-3 text-sm font-medium text-slate-500">还没有可展示素材</div>
+          <div class="mt-3 text-sm font-semibold text-slate-500">还没有可展示素材</div>
           <p class="mt-1 text-xs text-slate-400">上传产品图、Logo 或背景图开始创作。</p>
         </div>
       </div>
 
       <div class="mt-5 flex shrink-0 items-start gap-2 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-400">
         <Info :size="15" class="mt-0.5 shrink-0" />
-        <span>拖拽素材可调整顺序，影响生成效果。</span>
+        <span>提示：拖拽素材可调整顺序，影响生成效果。</span>
       </div>
     </div>
   </SectionCard>
