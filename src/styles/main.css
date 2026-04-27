@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --page-bg: #f6f7fb;
-  --panel-soft: #f8fafc;
-  --line-soft: #eceef5;
+  --page-bg: #fff8ef;
+  --panel-soft: #fff3df;
+  --line-soft: #f3dfc8;
   --card-bg: #ffffff;
-  --primary: #6c5ce7;
-  --primary-strong: #4f46e5;
-  --primary-hover: #5b50df;
-  --primary-soft: #f4f0ff;
-  --text-1: #111827;
-  --text-2: #475569;
-  --text-3: #94a3b8;
+  --primary: #f58220;
+  --primary-strong: #d85f08;
+  --primary-hover: #ea6f10;
+  --primary-soft: #fff0dc;
+  --accent-yellow: #ffd43b;
+  --accent-red: #e53935;
+  --text-1: #2f1e12;
+  --text-2: #6b4a2f;
+  --text-3: #b08968;
   --radius-card: 22px;
   --radius-control: 13px;
-  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.045);
-  --shadow-float: 0 24px 70px rgba(15, 23, 42, 0.12);
+  --shadow-card: 0 10px 30px rgba(107, 74, 47, 0.055);
+  --shadow-float: 0 24px 70px rgba(107, 74, 47, 0.16);
   font-family:
     "Plus Jakarta Sans",
     "Alibaba Sans",
@@ -64,7 +66,7 @@ button {
 .field-label {
   font-size: 13px;
   font-weight: 700;
-  color: #25324a;
+  color: #3a2a1e;
 }
 
 .n-input,
@@ -81,7 +83,7 @@ button {
 
 .n-input .n-input__placeholder,
 .n-base-selection .n-base-selection-placeholder {
-  color: #aab3c2 !important;
+  color: #b8a088 !important;
 }
 
 .n-button {
@@ -90,13 +92,13 @@ button {
 
 .gradient-button {
   border: 0 !important;
-  background: linear-gradient(135deg, #9b5cf6 0%, #5c4df0 48%, #4f46e5 100%) !important;
-  box-shadow: 0 14px 30px rgba(79, 70, 229, 0.26);
+  background: linear-gradient(135deg, #ffb347 0%, #f58220 48%, #e53935 100%) !important;
+  box-shadow: 0 14px 30px rgba(245, 130, 32, 0.28);
 }
 
 .gradient-button:hover {
-  background: linear-gradient(135deg, #8b5cf6 0%, #5145df 48%, #4338ca 100%) !important;
-  box-shadow: 0 16px 34px rgba(79, 70, 229, 0.32);
+  background: linear-gradient(135deg, #ffa726 0%, #ea6f10 48%, #d32f2f 100%) !important;
+  box-shadow: 0 16px 34px rgba(245, 130, 32, 0.34);
 }
 
 .field-label {
@@ -110,7 +112,7 @@ button {
   min-width: 0;
   align-items: center;
   gap: 10px;
-  border: 1px solid #e8ebf3;
+  border: 1px solid #f0ddc6;
   border-radius: 14px;
   background: #ffffff;
   padding: 4px 10px 4px 6px;
@@ -118,8 +120,8 @@ button {
 }
 
 .color-control:hover {
-  border-color: #cfc7ff;
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.08);
+  border-color: #ffb347;
+  box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.1);
 }
 
 .color-control .n-input {
@@ -140,7 +142,7 @@ button {
   min-width: 82px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: #334155;
+  color: #3a2a1e;
 }
 
 .color-swatch-button {
@@ -172,12 +174,12 @@ button {
   cursor: pointer;
   place-items: center;
   border-radius: 8px;
-  color: #94a3b8;
+  color: #b08968;
   transition: all 0.18s ease;
 }
 
 .color-picker-button:hover {
-  background: #f4f0ff;
+  background: #fff0dc;
   color: var(--primary);
 }
 
@@ -204,10 +206,10 @@ button {
 
 .size-pill {
   min-height: 52px;
-  border: 1px solid #e8ebf3;
+  border: 1px solid #f0ddc6;
   border-radius: 14px;
   background: #ffffff;
-  color: #334155;
+  color: #3a2a1e;
   transition: all 0.18s ease;
 }
 
@@ -225,15 +227,15 @@ button {
   margin-top: 2px;
   font-size: 11px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #b08968;
 }
 
 .size-pill:hover,
 .size-pill-active {
   border-color: var(--primary);
-  background: linear-gradient(180deg, #ffffff 0%, #f7f3ff 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #fff4e5 100%);
   color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.11);
+  box-shadow: 0 0 0 3px rgba(245, 130, 32, 0.12);
 }
 
 .size-pill-active small {
@@ -247,7 +249,7 @@ button {
   max-height: min(100%, 520px);
   overflow: hidden;
   border-radius: 16px;
-  background: linear-gradient(135deg, #dbeafe, #eef2ff 48%, #f5f3ff);
+  background: linear-gradient(135deg, #fff3df, #fff8ef 48%, #ffe8bd);
   box-shadow: var(--shadow-float);
 }
 
@@ -257,10 +259,10 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1px solid #eef1f6;
+  border: 1px solid #f3dfc8;
   border-radius: 14px;
-  background: #fbfcff;
-  color: #64748b;
+  background: #fffdf9;
+  color: #7a5434;
   font-size: 12px;
   font-weight: 700;
   transition: all 0.18s ease;
@@ -268,15 +270,15 @@ button {
 
 .action-button:hover {
   transform: translateY(-1px);
-  border-color: #dcd6ff;
-  background: #f6f3ff;
+  border-color: #ffca7a;
+  background: #fff3df;
   color: var(--primary);
 }
 
 .workspace-scroll {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.22) transparent;
+  scrollbar-color: rgba(176, 137, 104, 0.25) transparent;
   overscroll-behavior: contain;
 }
 
@@ -290,9 +292,9 @@ button {
 
 .workspace-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.22);
+  background: rgba(176, 137, 104, 0.25);
 }
 
 .workspace-scroll:hover::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(176, 137, 104, 0.45);
 }
