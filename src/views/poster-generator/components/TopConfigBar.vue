@@ -10,7 +10,10 @@
         <div class="color-control">
           <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: mainColor }" />
           <n-input v-model:value="mainColor" size="small" class="color-value-input" />
-          <Edit3 :size="15" class="shrink-0 text-slate-400" />
+          <label class="color-picker-button" title="选择主色调">
+            <Edit3 :size="15" />
+            <input v-model="mainColor" type="color" aria-label="选择主色调" />
+          </label>
         </div>
       </div>
 
@@ -19,7 +22,10 @@
         <div class="color-control">
           <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: subColor }" />
           <n-input v-model:value="subColor" size="small" class="color-value-input" />
-          <Edit3 :size="15" class="shrink-0 text-slate-400" />
+          <label class="color-picker-button" title="选择辅助色">
+            <Edit3 :size="15" />
+            <input v-model="subColor" type="color" aria-label="选择辅助色" />
+          </label>
         </div>
       </div>
 
