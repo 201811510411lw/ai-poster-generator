@@ -8,7 +8,10 @@
       <div>
         <label class="field-label">主色调</label>
         <div class="color-control">
-          <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: mainColor }" />
+          <label class="color-swatch-button" title="选择主色调">
+            <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: mainColor }" />
+            <input v-model="mainColor" type="color" aria-label="选择主色调" />
+          </label>
           <n-input v-model:value="mainColor" size="small" class="color-value-input" />
           <label class="color-picker-button" title="选择主色调">
             <Edit3 :size="15" />
@@ -20,7 +23,10 @@
       <div>
         <label class="field-label">辅助色</label>
         <div class="color-control">
-          <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: subColor }" />
+          <label class="color-swatch-button" title="选择辅助色">
+            <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: subColor }" />
+            <input v-model="subColor" type="color" aria-label="选择辅助色" />
+          </label>
           <n-input v-model:value="subColor" size="small" class="color-value-input" />
           <label class="color-picker-button" title="选择辅助色">
             <Edit3 :size="15" />
