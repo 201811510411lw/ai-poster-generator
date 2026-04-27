@@ -33,14 +33,18 @@
         </n-upload-dragger>
       </n-upload>
 
-      <div class="mt-5 flex shrink-0 items-center justify-between border-b border-slate-100 pb-3">
-        <button class="border-b-2 border-[var(--primary)] pb-3 text-sm font-bold text-[var(--primary)]">
-          全部素材({{ assets.length }})
+      <div class="mt-5 grid shrink-0 grid-cols-2 gap-3 border-b border-slate-100 pb-4">
+        <button
+          type="button"
+          class="flex h-10 w-full items-center justify-start rounded-xl border border-violet-200 bg-violet-50/70 px-4 text-sm font-bold text-[var(--primary)] transition hover:border-violet-300 hover:bg-violet-50"
+        >
+          <span>全部素材</span>
+          <span class="ml-1 font-extrabold">({{ assets.length }})</span>
         </button>
         <n-select
           v-model:value="filterType"
           size="small"
-          class="w-36"
+          class="asset-filter-select w-full"
           :options="filterOptions"
           placeholder="按类型筛选"
         />
@@ -153,3 +157,20 @@ async function handleCustomUpload(options: UploadCustomRequestOptions) {
   }
 }
 </script>
+
+<style scoped>
+.asset-filter-select :deep(.n-base-selection) {
+  min-height: 40px;
+  border-radius: 12px !important;
+}
+
+.asset-filter-select :deep(.n-base-selection-label) {
+  min-height: 40px !important;
+  padding-left: 14px !important;
+  font-weight: 600;
+}
+
+.asset-filter-select :deep(.n-base-selection-input) {
+  text-align: left;
+}
+</style>
