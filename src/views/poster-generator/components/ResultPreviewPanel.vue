@@ -1,7 +1,7 @@
 <template>
   <SectionCard title="生成结果" class="h-full">
     <template #header-extra>
-      <n-button secondary size="small">
+      <n-button secondary size="small" class="font-bold">
         <template #icon>
           <History :size="14" />
         </template>
@@ -10,9 +10,9 @@
     </template>
 
     <div class="workspace-scroll flex h-full min-h-0 flex-col overflow-y-auto pr-2">
-      <div class="flex min-h-0 flex-1 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#F8FAFC,#F1F5F9)] px-7 py-5">
+      <div class="flex min-h-0 flex-1 items-center justify-center rounded-[22px] bg-[linear-gradient(180deg,#F8FAFC,#F1F5F9)] px-7 py-6 shadow-inner">
         <div class="poster-canvas" :style="canvasStyle">
-          <div class="absolute right-3 top-3 rounded-lg bg-slate-900/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
+          <div class="absolute right-3 top-3 z-10 rounded-lg bg-slate-900/55 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm backdrop-blur">
             {{ currentSizeLabel }}
           </div>
 
@@ -21,7 +21,7 @@
               <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-200">
                 <ImagePlus :size="24" />
               </div>
-              <h3 class="mt-4 text-lg font-bold tracking-[-0.02em] text-slate-800">等待你的第一张成品</h3>
+              <h3 class="mt-4 text-lg font-extrabold tracking-[-0.02em] text-slate-800">等待你的第一张成品</h3>
               <p class="mt-2 text-sm leading-6 text-slate-500">上传素材、填写参数后点击生成</p>
             </div>
           </div>
@@ -48,15 +48,15 @@
 
       <div class="mt-4 grid grid-cols-4 gap-3">
         <button v-for="action in actions" :key="action.label" class="action-button" type="button" @click="action.handler">
-          <component :is="action.icon" :size="18" />
+          <component :is="action.icon" :size="17" />
           <span>{{ action.label }}</span>
         </button>
       </div>
 
       <div class="mt-5 border-t border-slate-100 pt-4">
         <div class="mb-3 flex items-center justify-between">
-          <h3 class="text-sm font-bold text-slate-900">更多生成结果</h3>
-          <button class="grid h-8 w-8 place-items-center rounded-full bg-slate-50 text-slate-500 hover:bg-slate-100">
+          <h3 class="text-sm font-extrabold text-slate-900">更多生成结果</h3>
+          <button class="grid h-8 w-8 place-items-center rounded-full bg-slate-50 text-slate-500 transition hover:bg-violet-50 hover:text-[var(--primary)]">
             <ChevronRight :size="16" />
           </button>
         </div>
@@ -67,14 +67,14 @@
             class="h-20 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm"
           >
             <img v-if="generatedImageUrl" :src="generatedImageUrl" alt="candidate poster" class="h-full w-full object-cover" />
-            <div v-else class="h-full w-full bg-[linear-gradient(135deg,#DBEAFE,#EEF2FF_45%,#F5F3FF)]" />
+            <div v-else class="h-full w-full bg-[linear-gradient(135deg,#EEF2F7,#F8FAFC_48%,#F5F3FF)]" />
           </div>
         </div>
       </div>
 
       <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-400">
         <span>每次生成消耗 2 积分，当前剩余 98 积分</span>
-        <button class="font-medium text-[var(--primary)] hover:text-[var(--primary-hover)]">获取更多积分</button>
+        <button class="font-bold text-[var(--primary)] hover:text-[var(--primary-hover)]">获取更多积分</button>
       </div>
     </div>
   </SectionCard>
