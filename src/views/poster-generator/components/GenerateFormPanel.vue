@@ -1,7 +1,7 @@
 <template>
   <SectionCard title="生成设置" class="min-h-0 flex-1">
-    <n-form label-placement="top" class="flex h-full min-h-0 flex-col gap-4">
-      <div class="grid gap-4 xl:grid-cols-[120px_90px_minmax(320px,1fr)]">
+    <n-form label-placement="top" class="flex h-full min-h-0 flex-col gap-5">
+      <div class="grid gap-4 xl:grid-cols-[112px_96px_minmax(360px,1fr)]">
         <n-form-item label="物料类型">
           <n-select :value="materialType" :options="designerMaterialOptions" @update:value="handleMaterialChange" />
         </n-form-item>
@@ -9,7 +9,7 @@
           <n-select v-model:value="outputFormat" :options="formatOptions" />
         </n-form-item>
         <n-form-item label="尺寸设置">
-          <div class="grid w-full grid-cols-4 gap-2">
+          <div class="grid w-full grid-cols-4 gap-3">
             <button
               v-for="preset in sizePresets"
               :key="preset.key"
@@ -58,9 +58,9 @@
         />
       </n-form-item>
 
-      <div class="mt-auto grid gap-3 border-t border-slate-100 pt-5 xl:grid-cols-[1fr_120px]">
+      <div class="mt-auto grid gap-3 border-t border-slate-100 pt-5 xl:grid-cols-[1fr_128px]">
         <n-button
-          class="gradient-button h-12 w-full text-[15px] font-semibold"
+          class="gradient-button h-12 w-full text-[15px] font-bold"
           type="primary"
           size="large"
           :loading="generationStatus === 'generating'"
@@ -72,7 +72,7 @@
           </template>
           {{ buttonText }}
         </n-button>
-        <n-button class="h-12" size="large" secondary @click="handleReset">
+        <n-button class="h-12 font-bold" size="large" secondary @click="handleReset">
           <template #icon>
             <RotateCcw :size="16" />
           </template>
