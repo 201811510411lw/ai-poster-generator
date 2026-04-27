@@ -4,22 +4,22 @@
       <ChevronUp :size="16" class="mt-1 text-slate-300" />
     </template>
 
-    <div class="grid gap-4 xl:grid-cols-[150px_150px_minmax(220px,1fr)]">
+    <div class="grid gap-4 xl:grid-cols-[180px_180px_minmax(220px,1fr)]">
       <div>
         <label class="field-label">主色调</label>
         <div class="color-control">
-          <span class="h-8 w-8 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: mainColor }" />
-          <n-input v-model:value="mainColor" size="small" class="min-w-0 flex-1" />
-          <Edit3 :size="15" class="text-slate-400" />
+          <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: mainColor }" />
+          <n-input v-model:value="mainColor" size="small" class="color-value-input" />
+          <Edit3 :size="15" class="shrink-0 text-slate-400" />
         </div>
       </div>
 
       <div>
         <label class="field-label">辅助色</label>
         <div class="color-control">
-          <span class="h-8 w-8 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: subColor }" />
-          <n-input v-model:value="subColor" size="small" class="min-w-0 flex-1" />
-          <Edit3 :size="15" class="text-slate-400" />
+          <span class="h-8 w-8 shrink-0 rounded-lg shadow-inner ring-1 ring-black/5" :style="{ backgroundColor: subColor }" />
+          <n-input v-model:value="subColor" size="small" class="color-value-input" />
+          <Edit3 :size="15" class="shrink-0 text-slate-400" />
         </div>
       </div>
 
