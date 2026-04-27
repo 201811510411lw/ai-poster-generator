@@ -1,10 +1,10 @@
 <template>
-  <SectionCard title="基础设置">
+  <SectionCard title="基础设置" class="shrink-0">
     <template #header-extra>
       <ChevronUp :size="16" class="mt-1 text-slate-300" />
     </template>
 
-    <div class="grid gap-5 xl:grid-cols-[150px_150px_minmax(220px,1fr)]">
+    <div class="grid gap-4 xl:grid-cols-[150px_150px_minmax(220px,1fr)]">
       <div>
         <label class="field-label">主色调</label>
         <div class="color-control">
@@ -26,8 +26,6 @@
       <n-form-item label="品牌/活动描述">
         <n-input
           v-model:value="brandDescription"
-          type="textarea"
-          :autosize="{ minRows: 2, maxRows: 3 }"
           maxlength="50"
           show-count
           placeholder="例如：天然营养，好喝更健康"
@@ -35,11 +33,9 @@
       </n-form-item>
     </div>
 
-    <n-form-item label="风格描述" class="mt-4">
+    <n-form-item label="风格描述" class="mt-3">
       <n-input
         v-model:value="styleDescription"
-        type="textarea"
-        :autosize="{ minRows: 2, maxRows: 3 }"
         maxlength="100"
         show-count
         placeholder="清新自然，简约现代，突出产品品质感"
