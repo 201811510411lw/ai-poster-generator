@@ -41,8 +41,12 @@
           <button class="grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-[var(--primary)]">
             <Sun :size="17" />
           </button>
-          <n-dropdown trigger="click" :options="userMenuOptions" @select="handleUserMenuSelect">
-            <button class="flex h-11 items-center gap-3 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 shadow-[0_6px_18px_rgba(15,23,42,0.035)] transition hover:border-violet-200 hover:bg-violet-50/40">
+          <div class="relative">
+            <button
+              class="flex h-11 items-center gap-3 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 shadow-[0_6px_18px_rgba(15,23,42,0.035)] transition hover:border-violet-200 hover:bg-violet-50/40"
+              type="button"
+              @click.stop="toggleUserMenu"
+            >
               <div class="grid h-9 w-9 place-items-center rounded-full bg-[linear-gradient(135deg,#EEF2FF,#F5F3FF)] text-sm font-extrabold text-[var(--primary)]">
                 设
               </div>
@@ -50,26 +54,56 @@
                 <div class="text-sm font-bold leading-5 text-slate-800">设计师</div>
                 <div class="text-xs text-slate-400">视觉设计师</div>
               </div>
-              <ChevronDown :size="15" class="text-slate-400" />
+              <ChevronDown
+                :size="15"
+                class="text-slate-400 transition"
+                :class="{ 'rotate-180 text-[var(--primary)]': userMenuOpen }"
+              />
             </button>
-          </n-dropdown>
+
+            <div
+              v-if="userMenuOpen"
+              class="absolute right-0 top-[calc(100%+10px)] z-[100] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_46px_rgba(15,23,42,0.16)]"
+              @click.stop
+            >
+              <button
+                v-for="item in userMenuItems"
+                :key="item.key"
+                class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-600 transition hover:bg-violet-50 hover:text-[var(--primary)]"
+                type="button"
+                @click="handleUserMenuSelect(item.key)"
+              >
+                <component :is="item.icon" :size="16" />
+                <span>{{ item.label }}</span>
+              </button>
+              <div class="my-1 h-px bg-slate-100" />
+              <button
+                class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-500"
+                type="button"
+                @click="handleUserMenuSelect('logout')"
+              >
+                <LogOut :size="16" />
+                <span>退出登录</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
-    <main class="min-h-0 w-full min-w-0 flex-1 overflow-hidden px-8 py-5 2xl:px-10">
+    <main class="min-h-0 w-full min-w-0 flex-1 overflow-hidden px-8 py-5 2xl:px-10" @click="closeUserMenu">
       <slot />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { h } from "vue";
-import type { Component } from "vue";
+import { ref } from "vue";
 import { Bell, ChevronDown, LogOut, PlusSquare, Settings, Sparkles, Sun, UserRound } from "lucide-vue-next";
-import { NButton, NDropdown, useMessage } from "naive-ui";
+import { NButton, useMessage } from "naive-ui";
 
 const message = useMessage();
+const userMenuOpen = ref(false);
 
 const workflowSteps = [
   { index: 1, label: "基础设置", active: true },
@@ -78,38 +112,21 @@ const workflowSteps = [
   { index: 4, label: "生成结果", active: false },
 ];
 
-function renderIcon(icon: Component) {
-  return () => h(icon, { size: 16, strokeWidth: 2 });
-}
-
-const userMenuOptions = [
-  {
-    label: "个人资料",
-    key: "profile",
-    icon: renderIcon(UserRound),
-  },
-  {
-    label: "消息通知",
-    key: "notifications",
-    icon: renderIcon(Bell),
-  },
-  {
-    label: "偏好设置",
-    key: "settings",
-    icon: renderIcon(Settings),
-  },
-  {
-    type: "divider",
-    key: "divider",
-  },
-  {
-    label: "退出登录",
-    key: "logout",
-    icon: renderIcon(LogOut),
-  },
+const userMenuItems = [
+  { label: "个人资料", key: "profile", icon: UserRound },
+  { label: "消息通知", key: "notifications", icon: Bell },
+  { label: "偏好设置", key: "settings", icon: Settings },
 ];
 
-function handleUserMenuSelect(key: string | number) {
+function toggleUserMenu() {
+  userMenuOpen.value = !userMenuOpen.value;
+}
+
+function closeUserMenu() {
+  userMenuOpen.value = false;
+}
+
+function handleUserMenuSelect(key: string) {
   const labelMap: Record<string, string> = {
     profile: "个人资料功能待接入",
     notifications: "消息通知功能待接入",
@@ -117,6 +134,7 @@ function handleUserMenuSelect(key: string | number) {
     logout: "退出登录功能待接入",
   };
 
-  message.info(labelMap[String(key)] || "功能待接入");
+  userMenuOpen.value = false;
+  message.info(labelMap[key] || "功能待接入");
 }
 </script>
