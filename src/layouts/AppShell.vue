@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-[100dvh] min-w-0 flex-col overflow-hidden bg-[var(--page-bg)] text-slate-950">
+  <div class="flex h-[100dvh] min-w-0 flex-col overflow-hidden bg-[var(--page-bg)] text-slate-950" @click="closeUserMenu">
     <header class="z-30 h-16 shrink-0 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl">
       <div class="flex h-16 w-full min-w-0 items-center justify-between gap-6 px-6 2xl:px-8">
         <div class="flex min-w-[260px] items-center gap-3">
@@ -41,69 +41,78 @@
           <button class="grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-violet-200 hover:bg-violet-50 hover:text-[var(--primary)]">
             <Sun :size="17" />
           </button>
-          <div class="relative">
-            <button
-              class="flex h-11 items-center gap-3 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 shadow-[0_6px_18px_rgba(15,23,42,0.035)] transition hover:border-violet-200 hover:bg-violet-50/40"
-              type="button"
-              @click.stop="toggleUserMenu"
-            >
-              <div class="grid h-9 w-9 place-items-center rounded-full bg-[linear-gradient(135deg,#EEF2FF,#F5F3FF)] text-sm font-extrabold text-[var(--primary)]">
-                设
-              </div>
-              <div class="hidden text-left xl:block">
-                <div class="text-sm font-bold leading-5 text-slate-800">设计师</div>
-                <div class="text-xs text-slate-400">视觉设计师</div>
-              </div>
-              <ChevronDown
-                :size="15"
-                class="text-slate-400 transition"
-                :class="{ 'rotate-180 text-[var(--primary)]': userMenuOpen }"
-              />
-            </button>
-
-            <div
-              v-if="userMenuOpen"
-              class="absolute right-0 top-[calc(100%+10px)] z-[100] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_46px_rgba(15,23,42,0.16)]"
-              @click.stop
-            >
-              <button
-                v-for="item in userMenuItems"
-                :key="item.key"
-                class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-600 transition hover:bg-violet-50 hover:text-[var(--primary)]"
-                type="button"
-                @click="handleUserMenuSelect(item.key)"
-              >
-                <component :is="item.icon" :size="16" />
-                <span>{{ item.label }}</span>
-              </button>
-              <div class="my-1 h-px bg-slate-100" />
-              <button
-                class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-500"
-                type="button"
-                @click="handleUserMenuSelect('logout')"
-              >
-                <LogOut :size="16" />
-                <span>退出登录</span>
-              </button>
+          <button
+            ref="userButtonRef"
+            class="flex h-11 items-center gap-3 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 shadow-[0_6px_18px_rgba(15,23,42,0.035)] transition hover:border-violet-200 hover:bg-violet-50/40"
+            type="button"
+            @click.stop="toggleUserMenu"
+          >
+            <div class="grid h-9 w-9 place-items-center rounded-full bg-[linear-gradient(135deg,#EEF2FF,#F5F3FF)] text-sm font-extrabold text-[var(--primary)]">
+              设
             </div>
-          </div>
+            <div class="hidden text-left xl:block">
+              <div class="text-sm font-bold leading-5 text-slate-800">设计师</div>
+              <div class="text-xs text-slate-400">视觉设计师</div>
+            </div>
+            <ChevronDown
+              :size="15"
+              class="text-slate-400 transition"
+              :class="{ 'rotate-180 text-[var(--primary)]': userMenuOpen }"
+            />
+          </button>
         </div>
       </div>
     </header>
 
-    <main class="min-h-0 w-full min-w-0 flex-1 overflow-hidden px-8 py-5 2xl:px-10" @click="closeUserMenu">
+    <main class="min-h-0 w-full min-w-0 flex-1 overflow-hidden px-8 py-5 2xl:px-10">
       <slot />
     </main>
+
+    <Teleport to="body">
+      <div
+        v-if="userMenuOpen"
+        class="fixed inset-0 z-[9998]"
+        @click="closeUserMenu"
+      />
+      <div
+        v-if="userMenuOpen"
+        class="fixed z-[9999] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_46px_rgba(15,23,42,0.16)]"
+        :style="userMenuStyle"
+        @click.stop
+      >
+        <button
+          v-for="item in userMenuItems"
+          :key="item.key"
+          class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-600 transition hover:bg-violet-50 hover:text-[var(--primary)]"
+          type="button"
+          @click="handleUserMenuSelect(item.key)"
+        >
+          <component :is="item.icon" :size="16" />
+          <span>{{ item.label }}</span>
+        </button>
+        <div class="my-1 h-px bg-slate-100" />
+        <button
+          class="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-500"
+          type="button"
+          @click="handleUserMenuSelect('logout')"
+        >
+          <LogOut :size="16" />
+          <span>退出登录</span>
+        </button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { Bell, ChevronDown, LogOut, PlusSquare, Settings, Sparkles, Sun, UserRound } from "lucide-vue-next";
 import { NButton, useMessage } from "naive-ui";
 
 const message = useMessage();
 const userMenuOpen = ref(false);
+const userButtonRef = ref<HTMLButtonElement | null>(null);
+const userMenuPosition = ref({ top: 64, right: 24 });
 
 const workflowSteps = [
   { index: 1, label: "基础设置", active: true },
@@ -118,7 +127,23 @@ const userMenuItems = [
   { label: "偏好设置", key: "settings", icon: Settings },
 ];
 
+const userMenuStyle = computed(() => ({
+  top: `${userMenuPosition.value.top}px`,
+  right: `${userMenuPosition.value.right}px`,
+}));
+
+function updateUserMenuPosition() {
+  const rect = userButtonRef.value?.getBoundingClientRect();
+  if (!rect) return;
+
+  userMenuPosition.value = {
+    top: rect.bottom + 10,
+    right: window.innerWidth - rect.right,
+  };
+}
+
 function toggleUserMenu() {
+  updateUserMenuPosition();
   userMenuOpen.value = !userMenuOpen.value;
 }
 
