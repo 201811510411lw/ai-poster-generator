@@ -106,7 +106,8 @@ button {
 
 .color-control {
   display: flex;
-  height: 38px;
+  height: 40px;
+  min-width: 0;
   align-items: center;
   gap: 10px;
   border: 1px solid #e8ebf3;
@@ -126,6 +127,20 @@ button {
   --n-border-hover: none !important;
   --n-border-focus: none !important;
   --n-box-shadow-focus: none !important;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.color-control .color-value-input .n-input-wrapper {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.color-control .color-value-input .n-input__input-el {
+  min-width: 82px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #334155;
 }
 
 .asset-chip {
