@@ -1,6 +1,6 @@
 <template>
   <SectionCard title="生成设置" class="min-h-0 flex-1">
-    <n-form label-placement="top" class="flex h-full min-h-0 flex-col gap-5">
+    <n-form label-placement="top" class="flex h-full min-h-0 flex-col gap-4">
       <div class="grid gap-4 xl:grid-cols-[112px_96px_minmax(360px,1fr)]">
         <n-form-item label="物料类型">
           <n-select :value="materialType" :options="designerMaterialOptions" @update:value="handleMaterialChange" />
@@ -47,20 +47,20 @@
         <n-input v-model:value="activityDescription" placeholder="例如：限时特惠，第二件半价" />
       </n-form-item>
 
-      <n-form-item label="设计要求（选填）">
+      <n-form-item label="设计要求（选填）" class="min-h-0">
         <n-input
           v-model:value="designRequirement"
           type="textarea"
-          :autosize="{ minRows: 3, maxRows: 5 }"
+          :autosize="{ minRows: 2, maxRows: 3 }"
           maxlength="200"
           show-count
           placeholder="例如：突出产品，画面简洁大气，重点突出牛奶的纯净和营养"
         />
       </n-form-item>
 
-      <div class="mt-auto grid gap-3 border-t border-slate-100 pt-5 xl:grid-cols-[1fr_128px]">
+      <div class="mt-auto grid gap-3 border-t border-slate-100 pt-4 xl:grid-cols-[1fr_128px]">
         <n-button
-          class="gradient-button h-12 w-full text-[15px] font-bold"
+          class="gradient-button h-11 w-full text-[15px] font-bold"
           type="primary"
           size="large"
           :loading="generationStatus === 'generating'"
@@ -72,7 +72,7 @@
           </template>
           {{ buttonText }}
         </n-button>
-        <n-button class="h-12 font-bold" size="large" secondary @click="handleReset">
+        <n-button class="h-11 font-bold" size="large" secondary @click="handleReset">
           <template #icon>
             <RotateCcw :size="16" />
           </template>
