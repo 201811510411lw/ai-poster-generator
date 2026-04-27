@@ -1,6 +1,6 @@
 <template>
   <section class="section-card flex min-h-0 flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--line-soft)] bg-[var(--card-bg)] shadow-[var(--shadow-card)]">
-    <div v-if="title || description" class="shrink-0 px-6 pb-4 pt-5">
+    <div v-if="title || description" class="shrink-0 px-6 pb-3 pt-5">
       <div class="flex items-start justify-between gap-4">
         <div class="min-w-0">
           <div v-if="eyebrow" class="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
@@ -16,7 +16,7 @@
         </div>
       </div>
     </div>
-    <div class="min-h-0 flex-1 px-6 pb-6 pt-2">
+    <div class="min-h-0 flex-1 px-6 pb-5 pt-1">
       <slot />
     </div>
   </section>
