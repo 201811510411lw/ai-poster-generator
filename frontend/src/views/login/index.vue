@@ -49,7 +49,7 @@
           <h2>进入创作空间</h2>
         </div>
 
-        <n-form ref="formRef" :model="form" :rules="rules" label-placement="top" @submit.prevent>
+        <n-form ref="formRef" :model="form" :rules="rules" label-placement="top" @submit.prevent="handleLogin">
           <n-form-item label="用户名 / 邮箱" path="username">
             <n-input
               v-model:value="form.username"
@@ -93,10 +93,9 @@
             type="primary"
             size="large"
             block
-            attr-type="button"
+            attr-type="submit"
             :loading="auth.loading"
             @mouseenter="triggerAction('smile')"
-            @click="handleLogin"
           >
             <span>立即登录</span>
             <span class="shine" />
