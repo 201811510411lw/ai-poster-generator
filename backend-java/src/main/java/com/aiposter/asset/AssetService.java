@@ -1,0 +1,122 @@
+package com.aiposter.asset;
+
+import com.aiposter.asset.dto.AssetUploadResponse;
+import com.aiposter.common.BusinessException;
+import com.aiposter.storage.StorageService;
+import com.aiposter.storage.StoredFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+@Service
+public class AssetService {
+    private static final Logger log = LoggerFactory.getLogger(AssetService.class);
+    private static final long MAX_FILE_SIZE = 20L * 1024 * 1024;
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/png", "image/jpeg");
+    private static final Set<String> ALLOWED_ASSET_TYPES = Set.of(
+            "product", "logo", "decoration", "background", "reference", "other"
+    );
+
+    private final AssetRepository assetRepository;
+    private final StorageService storageService;
+
+    public AssetService(AssetRepository assetRepository, StorageService storageService) {
+        this.assetRepository = assetRepository;
+        this.storageService = storageService;
+    }
+
+    public AssetUploadResponse upload(Long userId, String assetType, MultipartFile file) {
+        validateAssetType(assetType);
+        validateFile(file);
+
+        ImageSize imageSize = readImageSize(file);
+        StoredFile storedFile = storageService.store(file, "assets");
+
+        AssetEntity asset = new AssetEntity();
+        asset.setUserId(userId);
+        asset.setAssetType(assetType);
+        asset.setFilename(storedFile.getFilename());
+        asset.setOriginalFilename(StringUtils.cleanPath(file.getOriginalFilename() == null ? storedFile.getFilename() : file.getOriginalFilename()));
+        asset.setContentType(file.getContentType());
+        asset.setFileSize(file.getSize());
+        asset.setWidth(imageSize.width());
+        asset.setHeight(imageSize.height());
+        asset.setStoragePath(storedFile.getStoragePath());
+        asset.setAccessUrl(storedFile.getAccessUrl());
+
+        AssetEntity saved = assetRepository.save(asset);
+        log.info("素材上传成功: userId={}, assetId={}, assetType={}, filename={}", userId, saved.getId(), assetType, saved.getFilename());
+        return toResponse(saved);
+    }
+
+    public List<AssetUploadResponse> listByUser(Long userId) {
+        return assetRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private void validateAssetType(String assetType) {
+        if (!StringUtils.hasText(assetType) || !ALLOWED_ASSET_TYPES.contains(assetType)) {
+            throw new BusinessException("INVALID_ASSET_TYPE", "素材类型不合法");
+        }
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("EMPTY_FILE", "上传文件不能为空");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new BusinessException("FILE_TOO_LARGE", "单个素材不能超过 20MB");
+        }
+        String contentType = file.getContentType();
+        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new BusinessException("UNSUPPORTED_FILE_TYPE", "仅支持 PNG、JPG、JPEG 图片");
+        }
+
+        String filename = file.getOriginalFilename();
+        String lowerFilename = filename == null ? "" : filename.toLowerCase(Locale.ROOT);
+        if (!(lowerFilename.endsWith(".png") || lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg"))) {
+            throw new BusinessException("UNSUPPORTED_FILE_TYPE", "仅支持 PNG、JPG、JPEG 图片");
+        }
+    }
+
+    private ImageSize readImageSize(MultipartFile file) {
+        try {
+            BufferedImage image = ImageIO.read(file.getInputStream());
+            if (image == null) {
+                throw new BusinessException("INVALID_IMAGE", "图片文件无效");
+            }
+            return new ImageSize(image.getWidth(), image.getHeight());
+        } catch (IOException ex) {
+            throw new BusinessException("INVALID_IMAGE", "图片读取失败");
+        }
+    }
+
+    private AssetUploadResponse toResponse(AssetEntity asset) {
+        return new AssetUploadResponse(
+                asset.getId(),
+                asset.getAssetType(),
+                asset.getFilename(),
+                asset.getOriginalFilename(),
+                asset.getContentType(),
+                asset.getFileSize(),
+                asset.getWidth(),
+                asset.getHeight(),
+                asset.getAccessUrl(),
+                asset.getCreatedAt()
+        );
+    }
+
+    private record ImageSize(Integer width, Integer height) {
+    }
+}
