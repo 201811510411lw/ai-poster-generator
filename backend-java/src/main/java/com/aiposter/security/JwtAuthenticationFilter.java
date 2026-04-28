@@ -6,6 +6,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +20,8 @@ import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
@@ -35,8 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 jwtTokenProvider.validateToken(token);
                 Long userId = jwtTokenProvider.getUserId(token);
-                userRepository.findById(userId).ifPresent(this::authenticate);
-            } catch (Exception ignored) {
+                userRepository.findById(userId)
+                        .ifPresentOrElse(
+                                user -> authenticate(user, request),
+                                () -> log.warn("JWT 鉴权失败: userId={}, uri={}, reason={}", userId, request.getRequestURI(), "用户不存在")
+                        );
+            } catch (Exception ex) {
+                log.warn("JWT 鉴权失败: uri={}, reason={}", request.getRequestURI(), ex.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }
@@ -52,7 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private void authenticate(UserEntity user) {
+    private void authenticate(UserEntity user, HttpServletRequest request) {
         LoginUser principal = new LoginUser(user.getId(), user.getUsername(), user.getRole());
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 principal,
@@ -60,5 +69,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.debug("JWT 鉴权通过: userId={}, username={}, uri={}", user.getId(), user.getUsername(), request.getRequestURI());
     }
 }
