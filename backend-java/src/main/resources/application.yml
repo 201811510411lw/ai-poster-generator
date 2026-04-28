@@ -37,9 +37,17 @@ jwt:
   expiration-seconds: ${JWT_EXPIRATION_SECONDS:604800}
 
 storage:
+  type: ${STORAGE_TYPE:local}
   local:
     base-path: ${STORAGE_BASE_PATH:./data/uploads}
     public-base-url: ${STORAGE_PUBLIC_BASE_URL:/files}
+  tos:
+    region: ${TOS_REGION:cn-beijing}
+    endpoint: ${TOS_ENDPOINT:https://tos-cn-beijing.volces.com}
+    bucket: ${TOS_BUCKET:}
+    public-base-url: ${TOS_PUBLIC_BASE_URL:}
+    access-key: ${TOS_ACCESS_KEY:}
+    secret-key: ${TOS_SECRET_KEY:}
 
 app:
   cors:
