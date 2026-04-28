@@ -2,6 +2,7 @@ package com.aiposter.storage;
 
 import com.aiposter.common.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
+@ConditionalOnProperty(prefix = "storage", name = "type", havingValue = "local", matchIfMissing = true)
 public class LocalStorageService implements StorageService {
     private final Path basePath;
     private final String publicBaseUrl;
