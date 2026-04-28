@@ -30,11 +30,16 @@ Routes:
 /poster-generator
 ```
 
-Frontend auth can run in mock mode by default. To connect to the Java backend, create `frontend/.env` from `frontend/.env.example` and set:
+Frontend authentication now uses the Java backend only. Create `frontend/.env` from `frontend/.env.example`:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Default local backend URL:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
-VITE_USE_MOCK_AUTH=false
 ```
 
 ## Java backend
