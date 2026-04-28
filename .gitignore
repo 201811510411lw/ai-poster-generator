@@ -1,7 +1,15 @@
 node_modules/
+frontend/node_modules/
 dist/
+frontend/dist/
 .DS_Store
 *.log
 .env
 .env.*
-!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+.claude/
+backend-java/target/
+ai-service-python/.venv/
+__pycache__/

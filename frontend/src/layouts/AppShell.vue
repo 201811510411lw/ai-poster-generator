@@ -67,11 +67,11 @@
             @click.stop="toggleUserMenu"
           >
             <div class="grid h-9 w-9 place-items-center rounded-full bg-[linear-gradient(135deg,#FFF0DC,#FFE0B2)] text-sm font-extrabold text-[var(--primary)]">
-              设
+              {{ avatarText }}
             </div>
             <div class="hidden text-left xl:block">
-              <div class="text-sm font-bold leading-5 text-[#2F1E12]">设计师</div>
-              <div class="text-xs text-[#9A7355]">视觉设计师</div>
+              <div class="text-sm font-bold leading-5 text-[#2F1E12]">{{ displayName }}</div>
+              <div class="text-xs text-[#9A7355]">{{ accountName }}</div>
             </div>
             <ChevronDown
               :size="15"
@@ -125,10 +125,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import { Bell, ChevronDown, LogOut, PlusSquare, Settings, Sun, UserRound } from "lucide-vue-next";
 import { NButton, useMessage } from "naive-ui";
+import { useAuthStore } from "@/stores/auth";
 
+const router = useRouter();
 const message = useMessage();
+const auth = useAuthStore();
 const userMenuOpen = ref(false);
 const userButtonRef = ref<HTMLButtonElement | null>(null);
 const userMenuPosition = ref({ top: 64, right: 24 });
@@ -145,6 +149,10 @@ const userMenuItems = [
   { label: "消息通知", key: "notifications", icon: Bell },
   { label: "偏好设置", key: "settings", icon: Settings },
 ];
+
+const displayName = computed(() => auth.currentUser?.nickname || auth.currentUser?.username || "用户");
+const accountName = computed(() => auth.currentUser?.username || "已登录账号");
+const avatarText = computed(() => displayName.value.trim().slice(0, 1).toUpperCase() || "用");
 
 const userMenuStyle = computed(() => ({
   top: `${userMenuPosition.value.top}px`,
@@ -170,15 +178,22 @@ function closeUserMenu() {
   userMenuOpen.value = false;
 }
 
-function handleUserMenuSelect(key: string) {
+async function handleUserMenuSelect(key: string) {
   const labelMap: Record<string, string> = {
     profile: "个人资料功能待接入",
     notifications: "消息通知功能待接入",
     settings: "偏好设置功能待接入",
-    logout: "退出登录功能待接入",
   };
 
   userMenuOpen.value = false;
+
+  if (key === "logout") {
+    await auth.logoutWithRequest();
+    message.success("已退出登录");
+    await router.push("/login");
+    return;
+  }
+
   message.info(labelMap[key] || "功能待接入");
 }
 </script>
