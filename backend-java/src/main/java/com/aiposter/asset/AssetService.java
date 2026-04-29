@@ -7,6 +7,7 @@ import com.aiposter.storage.StoredFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,6 +64,20 @@ public class AssetService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public void delete(Long userId, Long assetId) {
+        AssetEntity asset = assetRepository.findById(assetId)
+                .orElseThrow(() -> new BusinessException("ASSET_NOT_FOUND", "素材不存在"));
+
+        if (!userId.equals(asset.getUserId())) {
+            throw new BusinessException("ASSET_FORBIDDEN", "无权删除该素材");
+        }
+
+        storageService.delete(asset.getStoragePath());
+        assetRepository.delete(asset);
+        log.info("素材删除成功: userId={}, assetId={}, filename={}", userId, assetId, asset.getFilename());
     }
 
     private void validateAssetType(String assetType) {
