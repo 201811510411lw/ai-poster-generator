@@ -1,5 +1,5 @@
 <template>
-  <SectionCard title="素材管理" class="h-full">
+  <SectionCard title="素材库" class="h-full">
     <template #header-extra>
       <button class="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-[var(--primary)]">
         <HelpCircle :size="16" />
@@ -50,13 +50,41 @@
         />
       </div>
 
+      <div class="mt-3 flex shrink-0 items-center justify-between rounded-2xl bg-orange-50/60 px-3 py-2 text-xs">
+        <span class="font-bold text-orange-600">已选择 {{ store.selectedAssetIds.length }} 个素材参与生成</span>
+        <button
+          v-if="store.selectedAssetIds.length"
+          type="button"
+          class="font-bold text-slate-400 transition hover:text-orange-500"
+          @click="store.clearSelectedAssets()"
+        >
+          清空选择
+        </button>
+      </div>
+
       <div class="workspace-scroll mt-4 min-h-0 flex-1 overflow-y-auto pr-2">
-        <div v-if="filteredAssets.length" class="grid grid-cols-2 gap-4">
+        <div v-if="store.assetsLoading" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm font-semibold text-slate-400">
+          正在加载素材库...
+        </div>
+
+        <div v-else-if="filteredAssets.length" class="grid grid-cols-2 gap-4">
           <article
             v-for="asset in filteredAssets"
             :key="asset.id"
-            class="group relative rounded-2xl border border-slate-200/80 bg-white p-2.5 transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_28px_rgba(79,70,229,0.10)]"
+            class="group relative cursor-pointer rounded-2xl border bg-white p-2.5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(79,70,229,0.10)]"
+            :class="store.isAssetSelected(asset.id) ? 'border-orange-300 ring-2 ring-orange-100' : 'border-slate-200/80 hover:border-violet-200'"
+            @click="store.toggleAssetSelection(asset.id)"
           >
+            <button
+              type="button"
+              class="absolute left-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-full shadow-sm ring-1 transition"
+              :class="store.isAssetSelected(asset.id) ? 'bg-orange-500 text-white ring-orange-400' : 'bg-white/90 text-slate-300 ring-slate-200 hover:text-orange-500'"
+              :title="store.isAssetSelected(asset.id) ? '取消选择' : '选择素材'"
+              @click.stop="store.toggleAssetSelection(asset.id)"
+            >
+              <Check v-if="store.isAssetSelected(asset.id)" :size="14" stroke-width="3" />
+            </button>
+
             <button
               type="button"
               class="absolute right-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-slate-400 shadow-sm backdrop-blur-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-500 hover:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
@@ -66,6 +94,7 @@
             >
               <X :size="13" stroke-width="2.4" />
             </button>
+
             <div class="aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
               <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" />
             </div>
@@ -80,7 +109,7 @@
                   :options="assetTypeSelectOptions"
                   @update:value="(value) => store.updateAssetType(asset.id, value)"
                 >
-                  <button class="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
+                  <button class="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" @click.stop>
                     <SlidersHorizontal :size="13" />
                   </button>
                 </n-popselect>
@@ -91,14 +120,14 @@
 
         <div v-else class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center">
           <ImageIcon :size="24" class="mx-auto text-slate-300" />
-          <div class="mt-3 text-sm font-semibold text-slate-500">还没有可展示素材</div>
-          <p class="mt-1 text-xs text-slate-400">上传产品图、Logo 或背景图开始创作。</p>
+          <div class="mt-3 text-sm font-semibold text-slate-500">素材库还是空的</div>
+          <p class="mt-1 text-xs text-slate-400">上传产品图、Logo 或背景图，点击卡片即可选择参与生成。</p>
         </div>
       </div>
 
       <div class="mt-5 flex shrink-0 items-start gap-2 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-400">
         <Info :size="15" class="mt-0.5 shrink-0" />
-        <span>提示：拖拽素材可调整顺序，影响生成效果。</span>
+        <span>提示：点击素材卡片可选择/取消选择，只有选中的素材会参与生成。</span>
       </div>
     </div>
   </SectionCard>
@@ -107,8 +136,8 @@
 <script setup lang="ts">
 import type { UploadCustomRequestOptions } from "naive-ui";
 import type { AssetType } from "@/types/poster";
-import { computed, ref } from "vue";
-import { HelpCircle, ImageIcon, Info, PlusCircle, SlidersHorizontal, Upload, X } from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
+import { Check, HelpCircle, ImageIcon, Info, PlusCircle, SlidersHorizontal, Upload, X } from "lucide-vue-next";
 import { NButton, NPopselect, NSelect, NUpload, NUploadDragger, useMessage } from "naive-ui";
 import SectionCard from "@/components/SectionCard.vue";
 import { usePosterGenerator } from "@/composables/usePosterGenerator";
@@ -131,6 +160,14 @@ const filteredAssets = computed(() => {
   return assets.value.filter((asset) => asset.assetType === filterType.value);
 });
 
+onMounted(async () => {
+  try {
+    await store.loadAssets();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : "素材库加载失败");
+  }
+});
+
 async function handleCustomUpload(options: UploadCustomRequestOptions) {
   const file = options.file.file;
 
@@ -148,7 +185,7 @@ async function handleCustomUpload(options: UploadCustomRequestOptions) {
   try {
     await store.addAsset(file, "product");
     options.onFinish();
-    message.success("素材上传成功");
+    message.success("素材上传成功，已自动选中");
   } catch (error) {
     options.onError();
     message.error(error instanceof Error ? error.message : "素材上传失败");
