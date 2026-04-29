@@ -1,5 +1,7 @@
-import { del, postForm } from "@/api/request";
+import { del, get, postForm } from "@/api/request";
 import type {
+  Asset,
+  AssetType,
   GeneratePosterPayload,
   GeneratePosterResponse,
   UploadAssetPayload,
@@ -10,7 +12,7 @@ const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve
 
 interface AssetUploadApiResponse {
   assetId: number;
-  assetType: string;
+  assetType: AssetType;
   filename: string;
   originalFilename: string;
   contentType?: string;
@@ -19,6 +21,11 @@ interface AssetUploadApiResponse {
   height?: number;
   url: string;
   createdAt?: string;
+}
+
+export async function listPosterAssets(): Promise<Asset[]> {
+  const result = await get<AssetUploadApiResponse[]>("/api/assets");
+  return result.map(toAsset);
 }
 
 export async function uploadPosterAsset(
@@ -78,6 +85,18 @@ export async function generatePoster(
     imageUrl: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     width: payload.width,
     height: payload.height,
+  };
+}
+
+function toAsset(result: AssetUploadApiResponse): Asset {
+  return {
+    id: String(result.assetId),
+    url: resolveAssetUrl(result.url),
+    filename: result.originalFilename || result.filename,
+    assetType: result.assetType,
+    width: result.width,
+    height: result.height,
+    size: result.fileSize,
   };
 }
 
