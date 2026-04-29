@@ -55,6 +55,24 @@ public class LocalStorageService implements StorageService {
         return new StoredFile(filename, targetFile.toString(), publicBaseUrl + "/" + relativePath);
     }
 
+    @Override
+    public void delete(String storagePath) {
+        if (!StringUtils.hasText(storagePath)) {
+            return;
+        }
+
+        Path targetFile = Path.of(storagePath).toAbsolutePath().normalize();
+        if (!targetFile.startsWith(basePath)) {
+            throw new BusinessException("INVALID_FILE_PATH", "文件路径非法");
+        }
+
+        try {
+            Files.deleteIfExists(targetFile);
+        } catch (IOException ex) {
+            throw new BusinessException("FILE_DELETE_FAILED", "文件删除失败");
+        }
+    }
+
     private String resolveExtension(String filename) {
         int dotIndex = filename.lastIndexOf('.');
         if (dotIndex < 0 || dotIndex == filename.length() - 1) {
