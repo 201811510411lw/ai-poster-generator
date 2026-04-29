@@ -59,6 +59,15 @@
           >
             <div class="relative aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
               <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" />
+              <button
+                type="button"
+                class="absolute right-1.5 top-1.5 z-10 grid h-6 w-6 place-items-center rounded-full bg-white/85 text-slate-400 shadow-sm backdrop-blur-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-500 hover:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="deletingAssetId === asset.id"
+                title="删除素材"
+                @click.stop="handleDeleteAsset(asset.id)"
+              >
+                <X :size="13" stroke-width="2.4" />
+              </button>
             </div>
             <div class="mt-2.5 min-w-0">
               <div class="truncate text-xs font-semibold text-slate-600" :title="asset.filename">{{ asset.filename }}</div>
@@ -76,15 +85,6 @@
                   </button>
                 </n-popselect>
               </div>
-              <button
-                type="button"
-                class="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-xl border border-red-100 bg-red-50 px-2 py-1.5 text-xs font-bold text-red-500 transition hover:border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="deletingAssetId === asset.id"
-                @click.stop="handleDeleteAsset(asset.id)"
-              >
-                <Trash2 :size="13" />
-                <span>{{ deletingAssetId === asset.id ? "删除中" : "删除" }}</span>
-              </button>
             </div>
           </article>
         </div>
@@ -108,7 +108,7 @@
 import type { UploadCustomRequestOptions } from "naive-ui";
 import type { AssetType } from "@/types/poster";
 import { computed, ref } from "vue";
-import { HelpCircle, ImageIcon, Info, PlusCircle, SlidersHorizontal, Trash2, Upload } from "lucide-vue-next";
+import { HelpCircle, ImageIcon, Info, PlusCircle, SlidersHorizontal, Upload, X } from "lucide-vue-next";
 import { NButton, NPopselect, NSelect, NUpload, NUploadDragger, useMessage } from "naive-ui";
 import SectionCard from "@/components/SectionCard.vue";
 import { usePosterGenerator } from "@/composables/usePosterGenerator";
