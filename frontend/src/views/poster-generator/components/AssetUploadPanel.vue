@@ -55,19 +55,19 @@
           <article
             v-for="asset in filteredAssets"
             :key="asset.id"
-            class="group rounded-2xl border border-slate-200/80 bg-white p-2.5 transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_28px_rgba(79,70,229,0.10)]"
+            class="group relative rounded-2xl border border-slate-200/80 bg-white p-2.5 transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_28px_rgba(79,70,229,0.10)]"
           >
-            <div class="relative aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
+            <button
+              type="button"
+              class="absolute right-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-slate-400 shadow-sm backdrop-blur-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-500 hover:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="deletingAssetId === asset.id"
+              title="删除素材"
+              @click.stop="handleDeleteAsset(asset.id)"
+            >
+              <X :size="13" stroke-width="2.4" />
+            </button>
+            <div class="aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
               <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" />
-              <button
-                type="button"
-                class="absolute right-1.5 top-1.5 z-10 grid h-6 w-6 place-items-center rounded-full bg-white/85 text-slate-400 shadow-sm backdrop-blur-sm ring-1 ring-slate-200 transition hover:bg-red-50 hover:text-red-500 hover:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="deletingAssetId === asset.id"
-                title="删除素材"
-                @click.stop="handleDeleteAsset(asset.id)"
-              >
-                <X :size="13" stroke-width="2.4" />
-              </button>
             </div>
             <div class="mt-2.5 min-w-0">
               <div class="truncate text-xs font-semibold text-slate-600" :title="asset.filename">{{ asset.filename }}</div>
