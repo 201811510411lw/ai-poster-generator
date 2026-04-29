@@ -33,7 +33,7 @@ export async function uploadPosterAsset(
   return {
     success: true,
     assetId: String(result.assetId),
-    url: result.url,
+    url: resolveAssetUrl(result.url),
     width: result.width,
     height: result.height,
   };
@@ -79,6 +79,15 @@ export async function generatePoster(
     width: payload.width,
     height: payload.height,
   };
+}
+
+function resolveAssetUrl(url: string) {
+  if (!url || url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
+    return url;
+  }
+
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+  return `${apiBaseUrl.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 }
 
 function escapeXml(input: string) {
