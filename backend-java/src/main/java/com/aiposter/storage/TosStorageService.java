@@ -3,6 +3,7 @@ package com.aiposter.storage;
 import com.aiposter.common.BusinessException;
 import com.volcengine.tos.TOSV2;
 import com.volcengine.tos.TOSV2ClientBuilder;
+import com.volcengine.tos.model.object.DeleteObjectInput;
 import com.volcengine.tos.model.object.PutObjectInput;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -62,6 +63,21 @@ public class TosStorageService implements StorageService {
         }
 
         return new StoredFile(objectKey.substring(objectKey.lastIndexOf('/') + 1), objectKey, publicBaseUrl + "/" + objectKey);
+    }
+
+    @Override
+    public void delete(String storagePath) {
+        if (!StringUtils.hasText(storagePath)) {
+            return;
+        }
+        try {
+            DeleteObjectInput input = new DeleteObjectInput()
+                    .setBucket(bucket)
+                    .setKey(storagePath);
+            tosClient.deleteObject(input);
+        } catch (Exception ex) {
+            throw new BusinessException("TOS_DELETE_FAILED", "TOS 文件删除失败");
+        }
     }
 
     private String resolveExtension(String filename) {
