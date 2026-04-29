@@ -59,19 +59,6 @@
           >
             <div class="relative aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
               <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" />
-              <n-button
-                class="absolute right-2 top-2 shadow-sm"
-                size="tiny"
-                circle
-                tertiary
-                type="error"
-                :loading="deletingAssetId === asset.id"
-                @click.stop="handleDeleteAsset(asset.id)"
-              >
-                <template #icon>
-                  <Trash2 :size="13" />
-                </template>
-              </n-button>
             </div>
             <div class="mt-2.5 min-w-0">
               <div class="truncate text-xs font-semibold text-slate-600" :title="asset.filename">{{ asset.filename }}</div>
@@ -89,6 +76,15 @@
                   </button>
                 </n-popselect>
               </div>
+              <button
+                type="button"
+                class="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-xl border border-red-100 bg-red-50 px-2 py-1.5 text-xs font-bold text-red-500 transition hover:border-red-200 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="deletingAssetId === asset.id"
+                @click.stop="handleDeleteAsset(asset.id)"
+              >
+                <Trash2 :size="13" />
+                <span>{{ deletingAssetId === asset.id ? "删除中" : "删除" }}</span>
+              </button>
             </div>
           </article>
         </div>
