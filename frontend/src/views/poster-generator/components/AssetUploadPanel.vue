@@ -60,7 +60,7 @@
             <div class="relative aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
               <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" />
               <n-button
-                class="absolute right-2 top-2 opacity-0 transition group-hover:opacity-100"
+                class="absolute right-2 top-2 shadow-sm"
                 size="tiny"
                 circle
                 tertiary
