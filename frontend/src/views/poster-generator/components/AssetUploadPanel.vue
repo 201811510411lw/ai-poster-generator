@@ -65,7 +65,8 @@
                 circle
                 tertiary
                 type="error"
-                @click.stop="store.removeAsset(asset.id)"
+                :loading="deletingAssetId === asset.id"
+                @click.stop="handleDeleteAsset(asset.id)"
               >
                 <template #icon>
                   <Trash2 :size="13" />
@@ -120,6 +121,7 @@ import { assetTypeOptions } from "@/utils/constants";
 const { store, assets } = usePosterGenerator();
 const message = useMessage();
 const filterType = ref<AssetType | "all">("all");
+const deletingAssetId = ref<string | null>(null);
 
 const assetTypeSelectOptions = assetTypeOptions;
 const assetTypeLabelMap = Object.fromEntries(assetTypeOptions.map((item) => [item.value, item.label]));
@@ -154,6 +156,18 @@ async function handleCustomUpload(options: UploadCustomRequestOptions) {
   } catch (error) {
     options.onError();
     message.error(error instanceof Error ? error.message : "素材上传失败");
+  }
+}
+
+async function handleDeleteAsset(assetId: string) {
+  deletingAssetId.value = assetId;
+  try {
+    await store.removeAsset(assetId);
+    message.success("素材删除成功");
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : "素材删除失败");
+  } finally {
+    deletingAssetId.value = null;
   }
 }
 </script>
