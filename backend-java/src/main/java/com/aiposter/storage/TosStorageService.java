@@ -53,8 +53,7 @@ public class TosStorageService implements StorageService {
                     .setBucket(bucket)
                     .setKey(objectKey)
                     .setContent(file.getInputStream())
-                    .setContentLength(file.getSize())
-                    .setContentType(file.getContentType());
+                    .setContentLength(file.getSize());
             tosClient.putObject(input);
         } catch (IOException ex) {
             throw new BusinessException("FILE_READ_FAILED", "文件读取失败");
