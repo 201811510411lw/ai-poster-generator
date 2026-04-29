@@ -1,3 +1,4 @@
+import { del, postForm } from "@/api/request";
 import type {
   GeneratePosterPayload,
   GeneratePosterResponse,
@@ -7,18 +8,39 @@ import type {
 
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+interface AssetUploadApiResponse {
+  assetId: number;
+  assetType: string;
+  filename: string;
+  originalFilename: string;
+  contentType?: string;
+  fileSize: number;
+  width?: number;
+  height?: number;
+  url: string;
+  createdAt?: string;
+}
+
 export async function uploadPosterAsset(
   payload: UploadAssetPayload,
 ): Promise<UploadAssetResponse> {
-  await sleep(400);
+  const formData = new FormData();
+  formData.append("assetType", payload.assetType);
+  formData.append("file", payload.file);
+
+  const result = await postForm<AssetUploadApiResponse>("/api/assets/upload", formData);
 
   return {
     success: true,
-    assetId: crypto.randomUUID(),
-    url: URL.createObjectURL(payload.file),
-    width: undefined,
-    height: undefined,
+    assetId: String(result.assetId),
+    url: result.url,
+    width: result.width,
+    height: result.height,
   };
+}
+
+export async function deletePosterAsset(assetId: string) {
+  await del<void>(`/api/assets/${assetId}`);
 }
 
 export async function generatePoster(
