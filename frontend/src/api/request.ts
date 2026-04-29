@@ -46,6 +46,11 @@ export async function post<T>(url: string, data?: unknown) {
   return unwrapResponse(response.data);
 }
 
+export async function del<T>(url: string) {
+  const response = await request.delete<ApiResponse<T>>(url);
+  return unwrapResponse(response.data);
+}
+
 export async function postForm<T>(url: string, formData: FormData) {
   const response = await request.post<ApiResponse<T>>(url, formData, {
     headers: {
