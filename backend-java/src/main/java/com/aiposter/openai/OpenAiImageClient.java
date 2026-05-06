@@ -1,6 +1,8 @@
 package com.aiposter.openai;
 
 import com.aiposter.common.BusinessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -11,13 +13,15 @@ import java.util.Map;
 
 @Component
 public class OpenAiImageClient {
+    private static final Logger log = LoggerFactory.getLogger(OpenAiImageClient.class);
+
     private final OpenAiImageProperties properties;
     private final RestClient restClient;
 
     public OpenAiImageClient(OpenAiImageProperties properties, RestClient.Builder restClientBuilder) {
         this.properties = properties;
         this.restClient = restClientBuilder
-                .baseUrl(trimTrailingSlash(properties.getBaseUrl()))
+                .baseUrl(resolveBaseUrl(properties.getBaseUrl()))
                 .build();
     }
 
@@ -46,6 +50,12 @@ public class OpenAiImageClient {
                     .retrieve()
                     .body(OpenAiImageResponse.class);
         } catch (Exception ex) {
+            log.warn("调用 OpenAI 图片生成失败: baseUrl={}, model={}, size={}, reason={}",
+                    resolveBaseUrl(properties.getBaseUrl()),
+                    properties.getModel(),
+                    StringUtils.hasText(size) ? size : properties.getSize(),
+                    ex.getMessage(),
+                    ex);
             throw new BusinessException("OPENAI_IMAGE_GENERATION_FAILED", "调用 OpenAI 图片生成失败");
         }
 
@@ -62,6 +72,11 @@ public class OpenAiImageClient {
             return "https://api.openai.com";
         }
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
+    }
+
+    private String resolveBaseUrl(String value) {
+        String baseUrl = trimTrailingSlash(value);
+        return baseUrl.endsWith("/v1") ? baseUrl.substring(0, baseUrl.length() - 3) : baseUrl;
     }
 
     public record OpenAiImageResponse(List<ImageData> data) {
