@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -34,25 +35,38 @@ public class LocalStorageService implements StorageService {
         }
 
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() == null ? "upload" : file.getOriginalFilename());
-        String extension = resolveExtension(originalFilename);
-        String datePath = LocalDate.now().toString().replace("-", "/");
+        String extension = resolveExtension(originalFilename, file.getContentType());
         String filename = UUID.randomUUID() + extension;
-        Path targetDir = basePath.resolve(folder).resolve(datePath).normalize();
-        Path targetFile = targetDir.resolve(filename).normalize();
-
-        if (!targetFile.startsWith(basePath)) {
-            throw new BusinessException("INVALID_FILE_PATH", "文件路径非法");
-        }
+        Path targetFile = resolveTargetFile(folder, filename);
 
         try {
-            Files.createDirectories(targetDir);
+            Files.createDirectories(targetFile.getParent());
             Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
             throw new BusinessException("FILE_SAVE_FAILED", "文件保存失败");
         }
 
-        String relativePath = basePath.relativize(targetFile).toString().replace("\\", "/");
-        return new StoredFile(filename, targetFile.toString(), publicBaseUrl + "/" + relativePath);
+        return toStoredFile(filename, targetFile);
+    }
+
+    @Override
+    public StoredFile store(byte[] content, String originalFilename, String contentType, String folder) {
+        if (content == null || content.length == 0) {
+            throw new BusinessException("EMPTY_FILE", "文件内容不能为空");
+        }
+
+        String extension = resolveExtension(originalFilename, contentType);
+        String filename = UUID.randomUUID() + extension;
+        Path targetFile = resolveTargetFile(folder, filename);
+
+        try {
+            Files.createDirectories(targetFile.getParent());
+            Files.write(targetFile, content);
+        } catch (IOException ex) {
+            throw new BusinessException("FILE_SAVE_FAILED", "文件保存失败");
+        }
+
+        return toStoredFile(filename, targetFile);
     }
 
     @Override
@@ -73,12 +87,41 @@ public class LocalStorageService implements StorageService {
         }
     }
 
-    private String resolveExtension(String filename) {
-        int dotIndex = filename.lastIndexOf('.');
-        if (dotIndex < 0 || dotIndex == filename.length() - 1) {
-            return "";
+    private Path resolveTargetFile(String folder, String filename) {
+        String datePath = LocalDate.now().toString().replace("-", "/");
+        Path targetDir = basePath.resolve(folder).resolve(datePath).normalize();
+        Path targetFile = targetDir.resolve(filename).normalize();
+
+        if (!targetFile.startsWith(basePath)) {
+            throw new BusinessException("INVALID_FILE_PATH", "文件路径非法");
         }
-        return filename.substring(dotIndex).toLowerCase();
+        return targetFile;
+    }
+
+    private StoredFile toStoredFile(String filename, Path targetFile) {
+        String relativePath = basePath.relativize(targetFile).toString().replace("\\", "/");
+        return new StoredFile(filename, targetFile.toString(), publicBaseUrl + "/" + relativePath);
+    }
+
+    private String resolveExtension(String filename, String contentType) {
+        if (StringUtils.hasText(filename)) {
+            String cleanFilename = StringUtils.cleanPath(filename).toLowerCase(Locale.ROOT);
+            int dotIndex = cleanFilename.lastIndexOf('.');
+            if (dotIndex >= 0 && dotIndex < cleanFilename.length() - 1) {
+                return cleanFilename.substring(dotIndex);
+            }
+        }
+
+        if ("image/jpeg".equalsIgnoreCase(contentType)) {
+            return ".jpg";
+        }
+        if ("image/png".equalsIgnoreCase(contentType)) {
+            return ".png";
+        }
+        if ("image/webp".equalsIgnoreCase(contentType)) {
+            return ".webp";
+        }
+        return "";
     }
 
     private String trimTrailingSlash(String value) {
