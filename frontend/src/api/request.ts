@@ -46,6 +46,11 @@ export async function post<T>(url: string, data?: unknown) {
   return unwrapResponse(response.data);
 }
 
+export async function put<T>(url: string, data?: unknown) {
+  const response = await request.put<ApiResponse<T>>(url, data);
+  return unwrapResponse(response.data);
+}
+
 export async function del<T>(url: string) {
   const response = await request.delete<ApiResponse<T>>(url);
   return unwrapResponse(response.data);
