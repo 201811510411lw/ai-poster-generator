@@ -51,8 +51,12 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     return !!(title.value?.trim() || subtitle.value?.trim() || designRequirement.value?.trim());
   });
 
+  const isGenerationRequestActive = computed(() => {
+    return generationStatus.value === "generating" && !!generationAbortController.value;
+  });
+
   const canGenerate = computed(() => {
-    return generationStatus.value !== "generating"
+    return !isGenerationRequestActive.value
       && width.value > 0
       && height.value > 0
       && hasPosterContent.value
@@ -172,7 +176,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   }
 
   async function generate() {
-    if (generationStatus.value === "generating") {
+    if (isGenerationRequestActive.value) {
       return;
     }
 
@@ -228,11 +232,15 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
       if (generationAbortController.value === abortController) {
         generationAbortController.value = null;
       }
+
+      if (generationStatus.value === "generating") {
+        generationStatus.value = generatedImageUrl.value ? "success" : "idle";
+      }
     }
   }
 
   function cancelGeneration() {
-    if (generationStatus.value !== "generating") {
+    if (!isGenerationRequestActive.value) {
       return false;
     }
 
@@ -268,6 +276,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     generatedImageUrl,
     errorMessage,
     canGenerate,
+    isGenerationRequestActive,
     setMaterialType,
     loadAssets,
     loadHistory,
