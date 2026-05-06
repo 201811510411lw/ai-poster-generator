@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +36,14 @@ public class AssetController {
     @GetMapping
     public ApiResponse<List<AssetUploadResponse>> list(@AuthenticationPrincipal LoginUser loginUser) {
         return ApiResponse.ok(assetService.listByUser(loginUser.getId()));
+    }
+
+    @PutMapping("/{assetId}/type")
+    public ApiResponse<AssetUploadResponse> updateAssetType(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @PathVariable Long assetId,
+            @RequestParam("assetType") String assetType) {
+        return ApiResponse.ok("素材类型已更新", assetService.updateAssetType(loginUser.getId(), assetId, assetType));
     }
 
     @DeleteMapping("/{assetId}")
