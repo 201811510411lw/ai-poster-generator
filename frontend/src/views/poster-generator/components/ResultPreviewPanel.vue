@@ -16,7 +16,7 @@
             {{ currentSizeLabel }}
           </div>
 
-          <div v-if="generationStatus === 'idle'" class="flex h-full items-center justify-center px-8 text-center">
+          <div v-if="generationStatus === 'idle' || generationStatus === 'canceled'" class="flex h-full items-center justify-center px-8 text-center">
             <div>
               <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-200">
                 <ImagePlus :size="24" />
@@ -26,7 +26,7 @@
             </div>
           </div>
 
-          <div v-else-if="generationStatus === 'generating'" class="flex h-full items-center justify-center">
+          <div v-else-if="isGenerationRequestActive" class="flex h-full items-center justify-center">
             <n-spin size="large">
               <template #description>
                 <span class="text-slate-500">AI 正在生成海报...</span>
@@ -42,7 +42,17 @@
             </n-result>
           </div>
 
-          <img v-else :src="generatedImageUrl || undefined" alt="generated poster" class="h-full w-full object-cover" />
+          <img v-else-if="generatedImageUrl" :src="generatedImageUrl" alt="generated poster" class="h-full w-full object-cover" />
+
+          <div v-else class="flex h-full items-center justify-center px-8 text-center">
+            <div>
+              <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-200">
+                <ImagePlus :size="24" />
+              </div>
+              <h3 class="mt-4 text-lg font-extrabold tracking-[-0.02em] text-slate-800">暂无成品图片</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-500">请重新生成或选择历史结果</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -90,10 +100,11 @@
           <button
             v-for="item in historyResults"
             :key="item.taskId"
-            class="group relative h-20 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--primary)] hover:shadow-md"
+            class="group relative h-20 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--primary)] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-slate-200 disabled:hover:shadow-sm"
             :class="{ 'border-[var(--primary)] ring-2 ring-orange-100': item.imageUrl === generatedImageUrl }"
             type="button"
             :title="item.title || '历史海报'"
+            :disabled="isGenerationRequestActive"
             @click="selectHistoryResult(item)"
           >
             <img :src="item.imageUrl" alt="history poster" class="h-full w-full object-cover" />
@@ -134,6 +145,7 @@ const {
   outputFormat,
   history,
   historyLoading,
+  isGenerationRequestActive,
 } = usePosterGenerator();
 const message = useMessage();
 
@@ -145,10 +157,10 @@ const canvasStyle = computed(() => ({
 }));
 
 const actions = computed(() => [
-  { label: "下载", icon: Download, handler: handleDownload, disabled: !hasGeneratedImage.value },
-  { label: "重新生成", icon: RefreshCw, handler: () => store.generate(), disabled: generationStatus.value === "generating" },
-  { label: "继续优化", icon: SlidersHorizontal, handler: handleContinueOptimize, disabled: !hasGeneratedImage.value },
-  { label: "分享", icon: Share2, handler: handleShare, disabled: !hasGeneratedImage.value },
+  { label: "下载", icon: Download, handler: handleDownload, disabled: !hasGeneratedImage.value || isGenerationRequestActive.value },
+  { label: "重新生成", icon: RefreshCw, handler: handleRegenerate, disabled: isGenerationRequestActive.value },
+  { label: "继续优化", icon: SlidersHorizontal, handler: handleContinueOptimize, disabled: !hasGeneratedImage.value || isGenerationRequestActive.value },
+  { label: "分享", icon: Share2, handler: handleShare, disabled: !hasGeneratedImage.value || isGenerationRequestActive.value },
 ]);
 
 onMounted(() => {
@@ -161,6 +173,11 @@ async function refreshHistory() {
 }
 
 function selectHistoryResult(item: PosterHistoryItem) {
+  if (isGenerationRequestActive.value) {
+    message.warning("当前正在生成，请先停止生成或等待完成后再切换历史结果");
+    return;
+  }
+
   if (!item.imageUrl) return;
 
   generatedImageUrl.value = item.imageUrl;
@@ -168,6 +185,14 @@ function selectHistoryResult(item: PosterHistoryItem) {
   height.value = item.height;
   generationStatus.value = "success";
   message.success("已切换到历史生成结果");
+}
+
+async function handleRegenerate() {
+  try {
+    await store.generate();
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : "生成失败");
+  }
 }
 
 function handleContinueOptimize() {
