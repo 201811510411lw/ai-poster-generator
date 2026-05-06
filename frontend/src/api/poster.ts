@@ -34,7 +34,7 @@ interface PosterHistoryApiResponse {
   taskId: number;
   title?: string;
   subtitle?: string;
-  status: "pending" | "success" | "failed" | "error";
+  status: "pending" | "success" | "failed" | "error" | "cancelled";
   imageUrl?: string;
   width: number;
   height: number;
@@ -79,11 +79,12 @@ export async function deletePosterAsset(assetId: string) {
 
 export async function generatePoster(
   payload: GeneratePosterPayload,
+  signal?: AbortSignal,
 ): Promise<GeneratePosterResponse> {
   const result = await post<GeneratePosterApiResponse>("/api/posters/generate", {
     ...payload,
     assetIds: payload.assetIds.map((assetId) => Number(assetId)).filter((assetId) => Number.isFinite(assetId)),
-  });
+  }, { signal });
 
   return {
     success: true,
@@ -101,7 +102,7 @@ export async function listPosterHistory(): Promise<PosterHistoryItem[]> {
     taskId: String(item.taskId),
     title: item.title || "未命名海报",
     subtitle: item.subtitle || "",
-    status: item.status === "failed" ? "error" : item.status,
+    status: item.status === "failed" || item.status === "cancelled" ? "error" : item.status,
     imageUrl: item.imageUrl ? resolveAssetUrl(item.imageUrl) : undefined,
     width: item.width,
     height: item.height,
