@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import { deletePosterAsset, generatePoster, listPosterAssets, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
+import { deletePosterAsset, generatePoster, listPosterAssets, listPosterHistory, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
 import { materialSizeMap } from "@/utils/constants";
 import type {
   Asset,
@@ -9,6 +9,7 @@ import type {
   GenerationStatus,
   MaterialType,
   OutputFormat,
+  PosterHistoryItem,
 } from "@/types/poster";
 
 export const usePosterGeneratorStore = defineStore("poster-generator", () => {
@@ -21,6 +22,10 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   const selectedAssetIds = ref<string[]>([]);
   const assetsLoaded = ref(false);
   const assetsLoading = ref(false);
+
+  const history = ref<PosterHistoryItem[]>([]);
+  const historyLoaded = ref(false);
+  const historyLoading = ref(false);
 
   const materialType = ref<MaterialType>("poster");
   const width = ref(1080);
@@ -65,6 +70,20 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
       assetsLoaded.value = true;
     } finally {
       assetsLoading.value = false;
+    }
+  }
+
+  async function loadHistory(force = false) {
+    if (historyLoaded.value && !force) {
+      return;
+    }
+
+    historyLoading.value = true;
+    try {
+      history.value = await listPosterHistory();
+      historyLoaded.value = true;
+    } finally {
+      historyLoading.value = false;
     }
   }
 
@@ -168,6 +187,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
       width.value = response.width;
       height.value = response.height;
       generationStatus.value = "success";
+      await loadHistory(true);
     } catch (error) {
       generationStatus.value = "error";
       errorMessage.value = error instanceof Error ? error.message : "生成失败，请稍后重试";
@@ -184,6 +204,9 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     selectedAssets,
     assetsLoaded,
     assetsLoading,
+    history,
+    historyLoaded,
+    historyLoading,
     materialType,
     width,
     height,
@@ -198,6 +221,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     canGenerate,
     setMaterialType,
     loadAssets,
+    loadHistory,
     addAsset,
     updateAssetType,
     isAssetSelected,
