@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -45,9 +47,8 @@ public class TosStorageService implements StorageService {
         }
 
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() == null ? "upload" : file.getOriginalFilename());
-        String extension = resolveExtension(originalFilename);
-        String datePath = LocalDate.now().toString().replace("-", "/");
-        String objectKey = folder + "/" + datePath + "/" + UUID.randomUUID() + extension;
+        String extension = resolveExtension(originalFilename, file.getContentType());
+        String objectKey = resolveObjectKey(folder, extension);
 
         try {
             PutObjectInput input = new PutObjectInput()
@@ -62,7 +63,30 @@ public class TosStorageService implements StorageService {
             throw new BusinessException("TOS_UPLOAD_FAILED", "文件上传到 TOS 失败");
         }
 
-        return new StoredFile(objectKey.substring(objectKey.lastIndexOf('/') + 1), objectKey, publicBaseUrl + "/" + objectKey);
+        return toStoredFile(objectKey);
+    }
+
+    @Override
+    public StoredFile store(byte[] content, String originalFilename, String contentType, String folder) {
+        if (content == null || content.length == 0) {
+            throw new BusinessException("EMPTY_FILE", "文件内容不能为空");
+        }
+
+        String extension = resolveExtension(originalFilename, contentType);
+        String objectKey = resolveObjectKey(folder, extension);
+
+        try {
+            PutObjectInput input = new PutObjectInput()
+                    .setBucket(bucket)
+                    .setKey(objectKey)
+                    .setContent(new ByteArrayInputStream(content))
+                    .setContentLength(content.length);
+            tosClient.putObject(input);
+        } catch (Exception ex) {
+            throw new BusinessException("TOS_UPLOAD_FAILED", "文件上传到 TOS 失败");
+        }
+
+        return toStoredFile(objectKey);
     }
 
     @Override
@@ -80,12 +104,34 @@ public class TosStorageService implements StorageService {
         }
     }
 
-    private String resolveExtension(String filename) {
-        int dotIndex = filename.lastIndexOf('.');
-        if (dotIndex < 0 || dotIndex == filename.length() - 1) {
-            return "";
+    private String resolveObjectKey(String folder, String extension) {
+        String datePath = LocalDate.now().toString().replace("-", "/");
+        return folder + "/" + datePath + "/" + UUID.randomUUID() + extension;
+    }
+
+    private StoredFile toStoredFile(String objectKey) {
+        return new StoredFile(objectKey.substring(objectKey.lastIndexOf('/') + 1), objectKey, publicBaseUrl + "/" + objectKey);
+    }
+
+    private String resolveExtension(String filename, String contentType) {
+        if (StringUtils.hasText(filename)) {
+            String cleanFilename = StringUtils.cleanPath(filename).toLowerCase(Locale.ROOT);
+            int dotIndex = cleanFilename.lastIndexOf('.');
+            if (dotIndex >= 0 && dotIndex < cleanFilename.length() - 1) {
+                return cleanFilename.substring(dotIndex);
+            }
         }
-        return filename.substring(dotIndex).toLowerCase();
+
+        if ("image/jpeg".equalsIgnoreCase(contentType)) {
+            return ".jpg";
+        }
+        if ("image/png".equalsIgnoreCase(contentType)) {
+            return ".png";
+        }
+        if ("image/webp".equalsIgnoreCase(contentType)) {
+            return ".webp";
+        }
+        return "";
     }
 
     private String trimTrailingSlash(String value) {
