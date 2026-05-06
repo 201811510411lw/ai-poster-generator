@@ -19,7 +19,7 @@
           </div>
           <div
             ref="generateSectionRef"
-            class="min-h-0 flex-1 rounded-[var(--radius-card)] transition"
+            class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--radius-card)] transition"
             :class="{ 'section-focus-ring': focusedSection === 'generate' }"
           >
             <GenerateFormPanel />
