@@ -70,7 +70,7 @@
           class="gradient-button h-11 w-full text-[15px] font-bold"
           type="primary"
           size="large"
-          :loading="generationStatus === 'generating'"
+          :loading="isGenerating"
           :disabled="!canGenerate"
           @click="handleGenerate"
         >
@@ -79,7 +79,17 @@
           </template>
           {{ buttonText }}
         </n-button>
-        <n-button class="h-11 font-bold" size="large" secondary @click="handleReset">
+        <n-button
+          v-if="isGenerating"
+          class="h-11 font-bold"
+          size="large"
+          type="warning"
+          secondary
+          @click="handleCancelGenerate"
+        >
+          停止生成
+        </n-button>
+        <n-button v-else class="h-11 font-bold" size="large" secondary @click="handleReset">
           <template #icon>
             <RotateCcw :size="16" />
           </template>
@@ -117,6 +127,7 @@ const {
   designRequirement,
   generationStatus,
   canGenerate,
+  selectedAssetIds,
 } = usePosterGenerator();
 const message = useMessage();
 const isCustomSize = ref(materialType.value === "custom");
@@ -140,7 +151,16 @@ const sizePresets: SizePreset[] = [
   { key: "custom", label: "自定义尺寸", width: width.value, height: height.value },
 ];
 
-const buttonText = computed(() => (generationStatus.value === "generating" ? "正在生成…" : "立即生成海报"));
+const isGenerating = computed(() => generationStatus.value === "generating");
+const buttonText = computed(() => {
+  if (isGenerating.value) {
+    return "正在生成…";
+  }
+  if (selectedAssetIds.value.length === 0) {
+    return "请先选择素材";
+  }
+  return "立即生成海报";
+});
 
 function handleMaterialChange(value: MaterialType) {
   isCustomSize.value = false;
@@ -182,11 +202,27 @@ function handleReset() {
 }
 
 async function handleGenerate() {
+  if (selectedAssetIds.value.length === 0) {
+    message.warning("请先选择至少 1 个素材再生成");
+    return;
+  }
+
   try {
     await store.generate();
+    if (generationStatus.value === "canceled") {
+      message.info("已停止本次生成");
+      return;
+    }
     message.success("生成完成");
   } catch (error) {
     message.error(error instanceof Error ? error.message : "生成失败");
+  }
+}
+
+function handleCancelGenerate() {
+  const canceled = store.cancelGeneration();
+  if (canceled) {
+    message.info("已停止本次生成");
   }
 }
 </script>
