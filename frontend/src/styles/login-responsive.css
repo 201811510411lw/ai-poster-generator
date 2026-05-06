@@ -1,7 +1,6 @@
 /* Login page responsive overrides.
-   Inspired by SeaTunnel Web's login layout: keep the page as two viewport-height panels,
-   center a narrow form panel, and scale the scene as one group instead of stacking many
-   height-specific hacks. */
+   SeaTunnel-style layout: a calm scene panel on the left and a narrow, centered form panel
+   on the right. Keep the form readable and scale the illustration as a single stage. */
 
 @media (min-width: 981px) {
   html body #app .login-page {
@@ -11,8 +10,13 @@
     min-height: 100dvh;
     max-height: 100vh;
     max-height: 100dvh;
-    grid-template-columns: minmax(520px, 1.28fr) minmax(420px, 0.95fr);
+    grid-template-columns: minmax(560px, 1.55fr) minmax(360px, 0.68fr);
     overflow: hidden;
+    background: #f7f9fc;
+  }
+
+  html body #app .login-page .cursor-glow {
+    opacity: 0.62;
   }
 
   html body #app .login-page .character-stage,
@@ -26,80 +30,130 @@
 
   html body #app .login-page .character-stage {
     background:
-      radial-gradient(circle at 14% 16%, rgba(255, 211, 61, 0.26), transparent 28%),
-      radial-gradient(circle at 72% 28%, rgba(91, 59, 255, 0.14), transparent 30%),
-      linear-gradient(135deg, #fffaf3 0%, #f8fafc 52%, #eef2ff 100%);
+      radial-gradient(circle at 14% 15%, rgba(255, 211, 61, 0.28), transparent 26%),
+      radial-gradient(circle at 74% 30%, rgba(91, 59, 255, 0.14), transparent 30%),
+      linear-gradient(135deg, #fffaf3 0%, #f8fafc 50%, #eef3ff 100%);
+  }
+
+  html body #app .login-page .stage-grid {
+    opacity: 0.2;
+    mask-image: radial-gradient(circle at 52% 54%, black 0%, transparent 76%);
   }
 
   html body #app .login-page .login-panel {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(18px, 3vh, 34px) clamp(36px, 5vw, 72px);
+    padding: clamp(18px, 3vh, 34px) clamp(26px, 3.5vw, 52px);
+    background:
+      radial-gradient(circle at 70% 16%, rgba(96, 165, 250, 0.1), transparent 28%),
+      radial-gradient(circle at 20% 82%, rgba(14, 165, 233, 0.07), transparent 26%),
+      linear-gradient(180deg, #fbfcff 0%, #f4f7fb 100%);
+  }
+
+  html body #app .login-page .login-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      rgba(148, 163, 184, 0.06) 0%,
+      rgba(148, 163, 184, 0.2) 50%,
+      rgba(148, 163, 184, 0.06) 100%
+    );
+  }
+
+  html body #app .login-page .panel-bg {
+    display: none;
   }
 
   html body #app .login-page .login-card {
-    width: min(100%, 430px);
+    position: relative;
+    z-index: 1;
+    width: min(100%, 382px);
     min-height: auto;
-    max-height: calc(100dvh - clamp(36px, 6vh, 68px));
-    padding: clamp(22px, 3.8vh, 36px) clamp(28px, 3.5vw, 38px);
+    max-height: calc(100dvh - 40px);
+    padding: clamp(22px, 3.4vh, 32px) clamp(24px, 3vw, 32px);
     justify-content: center;
     overflow: hidden;
-    border-radius: 0;
+    border-radius: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.76);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow:
+      0 22px 54px rgba(15, 23, 42, 0.08),
+      0 4px 14px rgba(15, 23, 42, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   html body #app .login-page .orbit-logo {
     display: grid;
-    width: clamp(112px, 19vh, 188px);
-    height: clamp(112px, 19vh, 188px);
-    margin-bottom: clamp(8px, 2vh, 18px);
+    width: clamp(92px, 15vh, 142px);
+    height: clamp(92px, 15vh, 142px);
+    margin-bottom: clamp(6px, 1.5vh, 12px);
   }
 
   html body #app .login-page .logo-core {
-    width: clamp(58px, 9vh, 86px);
-    height: clamp(58px, 9vh, 86px);
-    border-radius: clamp(18px, 3vh, 28px);
+    width: clamp(54px, 7.8vh, 74px);
+    height: clamp(54px, 7.8vh, 74px);
+    border-radius: clamp(18px, 2.8vh, 24px);
   }
 
   html body #app .login-page .logo-core svg {
-    width: clamp(28px, 4.4vh, 42px);
-    height: clamp(28px, 4.4vh, 42px);
+    width: clamp(28px, 4vh, 36px);
+    height: clamp(28px, 4vh, 36px);
+  }
+
+  html body #app .login-page .orbit {
+    border-width: 2px;
   }
 
   html body #app .login-page .card-title {
-    margin-bottom: clamp(12px, 2.3vh, 24px);
+    margin-bottom: clamp(12px, 2vh, 20px);
   }
 
   html body #app .login-page .card-title span {
-    font-size: clamp(20px, 3.4vh, 28px);
+    font-size: clamp(18px, 2.9vh, 24px);
   }
 
   html body #app .login-page .card-title h2 {
-    margin-top: clamp(6px, 1.4vh, 12px);
-    font-size: clamp(32px, 5.4vh, 52px);
+    margin-top: clamp(4px, 1vh, 9px);
+    font-size: clamp(28px, 4.6vh, 42px);
+    letter-spacing: -0.06em;
+  }
+
+  html body #app .login-page .n-form-item-label {
+    padding-bottom: 4px;
+  }
+
+  html body #app .login-page .n-input .n-input-wrapper {
+    min-height: 40px;
   }
 
   html body #app .login-page .login-options {
-    margin-top: -2px;
-    margin-bottom: clamp(10px, 2vh, 18px);
+    margin-top: -3px;
+    margin-bottom: clamp(10px, 1.7vh, 14px);
   }
 
   html body #app .login-page .login-button,
   html body #app .login-page .google-button {
-    height: clamp(40px, 5.8vh, 46px);
+    height: clamp(40px, 5.4vh, 44px);
   }
 
   html body #app .login-page .divider {
-    margin: clamp(8px, 2vh, 18px) 0;
+    margin: clamp(8px, 1.6vh, 12px) 0;
   }
 
   html body #app .login-page .signup-tip {
-    margin-top: clamp(8px, 2vh, 18px);
+    margin-top: clamp(8px, 1.6vh, 12px);
   }
 
   html body #app .login-page .brand-copy {
-    left: clamp(44px, 6vw, 92px);
-    top: clamp(40px, 8vh, 96px);
+    left: clamp(48px, 6.2vw, 96px);
+    top: clamp(42px, 8vh, 96px);
   }
 
   html body #app .login-page .brand-badge {
@@ -108,35 +162,40 @@
 
   html body #app .login-page .brand-copy h1 {
     margin-top: clamp(18px, 3vh, 24px);
-    margin-bottom: clamp(8px, 1.8vh, 14px);
-    font-size: clamp(52px, 10vh, 88px);
+    margin-bottom: clamp(8px, 1.7vh, 14px);
+    font-size: clamp(54px, 9.2vh, 88px);
   }
 
   html body #app .login-page .brand-copy p {
     display: block;
-    font-size: clamp(14px, 2vh, 16px);
+    max-width: 500px;
+    font-size: clamp(14px, 1.9vh, 16px);
     line-height: 1.65;
   }
 
   html body #app .login-page .crew-wrap {
     display: block;
-    bottom: clamp(34px, 8vh, 118px);
-    transform: translateX(-50%) scale(clamp(0.66, 0.12vh, 1)) !important;
+    bottom: clamp(38px, 8.2vh, 112px);
+    transform: translateX(-50%) scale(clamp(0.66, 0.118vh, 1)) !important;
     transform-origin: 50% 100%;
   }
 }
 
 @media (max-height: 700px) and (min-width: 981px) {
+  html body #app .login-page {
+    grid-template-columns: minmax(520px, 1.5fr) minmax(350px, 0.68fr);
+  }
+
   html body #app .login-page .login-card {
-    width: min(100%, 410px);
+    width: min(100%, 368px);
     padding-top: 18px;
     padding-bottom: 18px;
   }
 
   html body #app .login-page .orbit-logo {
-    width: 104px;
-    height: 104px;
-    margin-bottom: 6px;
+    width: 88px;
+    height: 88px;
+    margin-bottom: 5px;
   }
 
   html body #app .login-page .card-title {
@@ -144,11 +203,11 @@
   }
 
   html body #app .login-page .card-title span {
-    font-size: 20px;
+    font-size: 19px;
   }
 
   html body #app .login-page .card-title h2 {
-    font-size: 34px;
+    font-size: 32px;
   }
 
   html body #app .login-page .brand-copy {
@@ -156,7 +215,7 @@
   }
 
   html body #app .login-page .brand-copy h1 {
-    font-size: clamp(46px, 8.5vh, 66px);
+    font-size: clamp(46px, 8.4vh, 64px);
   }
 
   html body #app .login-page .brand-copy p {
@@ -164,19 +223,19 @@
   }
 
   html body #app .login-page .crew-wrap {
-    bottom: 34px;
-    transform: translateX(-50%) scale(0.64) !important;
+    bottom: 32px;
+    transform: translateX(-50%) scale(0.62) !important;
   }
 }
 
 @media (max-height: 610px) and (min-width: 981px) {
   html body #app .login-page {
-    grid-template-columns: minmax(440px, 1fr) minmax(420px, 1fr);
+    grid-template-columns: minmax(440px, 1.35fr) minmax(340px, 0.72fr);
   }
 
   html body #app .login-page .brand-copy {
     left: clamp(34px, 5vw, 72px);
-    top: 34px;
+    top: 32px;
   }
 
   html body #app .login-page .brand-badge {
@@ -187,35 +246,40 @@
   html body #app .login-page .brand-copy h1 {
     margin-top: 12px;
     white-space: normal;
-    font-size: clamp(38px, 7.8vh, 52px);
+    font-size: clamp(38px, 7.6vh, 52px);
   }
 
   html body #app .login-page .crew-wrap {
-    bottom: 24px;
-    transform: translateX(-50%) scale(0.56) !important;
+    bottom: 22px;
+    transform: translateX(-50%) scale(0.54) !important;
+  }
+
+  html body #app .login-page .login-panel {
+    padding-left: 22px;
+    padding-right: 22px;
   }
 
   html body #app .login-page .login-card {
-    width: min(100%, 392px);
+    width: min(100%, 354px);
     max-height: calc(100dvh - 24px);
-    padding: 14px 24px;
+    padding: 14px 22px;
   }
 
   html body #app .login-page .orbit-logo {
-    width: 82px;
-    height: 82px;
+    width: 72px;
+    height: 72px;
     margin-bottom: 4px;
   }
 
   html body #app .login-page .logo-core {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 16px;
   }
 
   html body #app .login-page .logo-core svg {
-    width: 26px;
-    height: 26px;
+    width: 25px;
+    height: 25px;
   }
 
   html body #app .login-page .card-title {
@@ -262,7 +326,7 @@
 
 @media (max-height: 500px) and (min-width: 981px) {
   html body #app .login-page {
-    grid-template-columns: minmax(360px, 0.85fr) minmax(420px, 1fr);
+    grid-template-columns: minmax(360px, 1fr) minmax(330px, 0.78fr);
   }
 
   html body #app .login-page .brand-badge,
@@ -299,6 +363,6 @@
   }
 
   html body #app .login-page .login-card {
-    width: min(100%, 420px);
+    width: min(100%, 360px);
   }
 }
