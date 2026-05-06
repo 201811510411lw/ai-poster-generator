@@ -23,6 +23,7 @@ public class AssetService {
     private static final Logger log = LoggerFactory.getLogger(AssetService.class);
     private static final long MAX_FILE_SIZE = 20L * 1024 * 1024;
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/png", "image/jpeg");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".png", ".jpg", ".jpeg");
     private static final Set<String> ALLOWED_ASSET_TYPES = Set.of(
             "product", "logo", "decoration", "background", "reference", "other"
     );
@@ -35,6 +36,7 @@ public class AssetService {
         this.storageService = storageService;
     }
 
+    @Transactional
     public AssetUploadResponse upload(Long userId, String assetType, MultipartFile file) {
         validateAssetType(assetType);
         validateFile(file);
@@ -42,21 +44,26 @@ public class AssetService {
         ImageSize imageSize = readImageSize(file);
         StoredFile storedFile = storageService.store(file, "assets");
 
-        AssetEntity asset = new AssetEntity();
-        asset.setUserId(userId);
-        asset.setAssetType(assetType);
-        asset.setFilename(storedFile.getFilename());
-        asset.setOriginalFilename(StringUtils.cleanPath(file.getOriginalFilename() == null ? storedFile.getFilename() : file.getOriginalFilename()));
-        asset.setContentType(file.getContentType());
-        asset.setFileSize(file.getSize());
-        asset.setWidth(imageSize.width());
-        asset.setHeight(imageSize.height());
-        asset.setStoragePath(storedFile.getStoragePath());
-        asset.setAccessUrl(storedFile.getAccessUrl());
+        try {
+            AssetEntity asset = new AssetEntity();
+            asset.setUserId(userId);
+            asset.setAssetType(assetType);
+            asset.setFilename(storedFile.getFilename());
+            asset.setOriginalFilename(resolveOriginalFilename(file, storedFile));
+            asset.setContentType(file.getContentType());
+            asset.setFileSize(file.getSize());
+            asset.setWidth(imageSize.width());
+            asset.setHeight(imageSize.height());
+            asset.setStoragePath(storedFile.getStoragePath());
+            asset.setAccessUrl(storedFile.getAccessUrl());
 
-        AssetEntity saved = assetRepository.save(asset);
-        log.info("素材上传成功: userId={}, assetId={}, assetType={}, filename={}", userId, saved.getId(), assetType, saved.getFilename());
-        return toResponse(saved);
+            AssetEntity saved = assetRepository.save(asset);
+            log.info("素材上传成功: userId={}, assetId={}, assetType={}, filename={}", userId, saved.getId(), assetType, saved.getFilename());
+            return toResponse(saved);
+        } catch (RuntimeException ex) {
+            safeDeleteStoredFile(storedFile);
+            throw ex;
+        }
     }
 
     public List<AssetUploadResponse> listByUser(Long userId) {
@@ -67,17 +74,31 @@ public class AssetService {
     }
 
     @Transactional
+    public AssetUploadResponse updateAssetType(Long userId, Long assetId, String assetType) {
+        validateAssetType(assetType);
+        AssetEntity asset = findOwnedAsset(userId, assetId);
+        asset.setAssetType(assetType);
+        AssetEntity saved = assetRepository.save(asset);
+        log.info("素材类型更新成功: userId={}, assetId={}, assetType={}", userId, assetId, assetType);
+        return toResponse(saved);
+    }
+
+    @Transactional
     public void delete(Long userId, Long assetId) {
+        AssetEntity asset = findOwnedAsset(userId, assetId);
+        storageService.delete(asset.getStoragePath());
+        assetRepository.delete(asset);
+        log.info("素材删除成功: userId={}, assetId={}, filename={}", userId, assetId, asset.getFilename());
+    }
+
+    private AssetEntity findOwnedAsset(Long userId, Long assetId) {
         AssetEntity asset = assetRepository.findById(assetId)
                 .orElseThrow(() -> new BusinessException("ASSET_NOT_FOUND", "素材不存在"));
 
         if (!userId.equals(asset.getUserId())) {
-            throw new BusinessException("ASSET_FORBIDDEN", "无权删除该素材");
+            throw new BusinessException("ASSET_FORBIDDEN", "无权操作该素材");
         }
-
-        storageService.delete(asset.getStoragePath());
-        assetRepository.delete(asset);
-        log.info("素材删除成功: userId={}, assetId={}, filename={}", userId, assetId, asset.getFilename());
+        return asset;
     }
 
     private void validateAssetType(String assetType) {
@@ -98,9 +119,8 @@ public class AssetService {
             throw new BusinessException("UNSUPPORTED_FILE_TYPE", "仅支持 PNG、JPG、JPEG 图片");
         }
 
-        String filename = file.getOriginalFilename();
-        String lowerFilename = filename == null ? "" : filename.toLowerCase(Locale.ROOT);
-        if (!(lowerFilename.endsWith(".png") || lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg"))) {
+        String extension = resolveExtension(file.getOriginalFilename());
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
             throw new BusinessException("UNSUPPORTED_FILE_TYPE", "仅支持 PNG、JPG、JPEG 图片");
         }
     }
@@ -114,6 +134,34 @@ public class AssetService {
             return new ImageSize(image.getWidth(), image.getHeight());
         } catch (IOException ex) {
             throw new BusinessException("INVALID_IMAGE", "图片读取失败");
+        }
+    }
+
+    private String resolveOriginalFilename(MultipartFile file, StoredFile storedFile) {
+        String originalFilename = file.getOriginalFilename();
+        if (!StringUtils.hasText(originalFilename)) {
+            return storedFile.getFilename();
+        }
+        return StringUtils.cleanPath(originalFilename);
+    }
+
+    private String resolveExtension(String filename) {
+        if (!StringUtils.hasText(filename)) {
+            return "";
+        }
+        String cleanFilename = StringUtils.cleanPath(filename).toLowerCase(Locale.ROOT);
+        int dotIndex = cleanFilename.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == cleanFilename.length() - 1) {
+            return "";
+        }
+        return cleanFilename.substring(dotIndex);
+    }
+
+    private void safeDeleteStoredFile(StoredFile storedFile) {
+        try {
+            storageService.delete(storedFile.getStoragePath());
+        } catch (RuntimeException cleanupError) {
+            log.warn("素材数据库保存失败后清理文件失败: storagePath={}", storedFile.getStoragePath(), cleanupError);
         }
     }
 
