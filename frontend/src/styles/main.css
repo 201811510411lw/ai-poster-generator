@@ -301,15 +301,20 @@ button {
 
 /* Login page should fit one browser viewport on desktop, while the workspace shell remains fixed. */
 html body #app .login-page {
+  height: 100vh;
   height: 100dvh;
+  min-height: 100vh;
   min-height: 100dvh;
+  max-height: 100vh;
   max-height: 100dvh;
   overflow: hidden;
 }
 
 html body #app .login-page .character-stage,
 html body #app .login-page .login-panel {
+  min-height: 100vh;
   min-height: 100dvh;
+  max-height: 100vh;
   max-height: 100dvh;
   overflow: hidden;
 }
@@ -435,6 +440,96 @@ html body #app .login-page .login-card {
 
   html body #app .login-page .card-title h2 {
     font-size: 30px;
+  }
+}
+
+@media (max-height: 560px) and (min-width: 981px) {
+  html body #app .login-page .brand-copy {
+    top: 18px;
+  }
+
+  html body #app .login-page .brand-badge,
+  html body #app .login-page .brand-copy p {
+    display: none;
+  }
+
+  html body #app .login-page .brand-copy h1 {
+    margin: 0;
+    font-size: clamp(32px, 4vw, 48px);
+  }
+
+  html body #app .login-page .crew-wrap {
+    bottom: -72px;
+    transform: translateX(-50%) scale(0.48) !important;
+  }
+
+  html body #app .login-page .login-panel {
+    padding: 8px 18px;
+  }
+
+  html body #app .login-page .login-card {
+    width: min(100%, 352px);
+    max-height: calc(100dvh - 16px);
+    padding: 10px 20px;
+  }
+
+  html body #app .login-page .card-title {
+    margin-bottom: 8px;
+  }
+
+  html body #app .login-page .card-title span {
+    font-size: 18px;
+  }
+
+  html body #app .login-page .card-title h2 {
+    margin-top: 5px;
+    font-size: 26px;
+  }
+
+  html body #app .login-page .n-form-item-label {
+    padding-bottom: 2px;
+  }
+
+  html body #app .login-page .n-input .n-input-wrapper {
+    min-height: 34px;
+  }
+
+  html body #app .login-page .login-options {
+    margin-top: -6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  html body #app .login-page .login-button,
+  html body #app .login-page .google-button {
+    height: 38px;
+  }
+
+  html body #app .login-page .divider {
+    margin: 6px 0;
+  }
+
+  html body #app .login-page .signup-tip {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 460px) and (min-width: 981px) {
+  html body #app .login-page .card-title span,
+  html body #app .login-page .divider,
+  html body #app .login-page .google-button,
+  html body #app .login-page .signup-tip {
+    display: none;
+  }
+
+  html body #app .login-page .card-title h2 {
+    margin-top: 0;
+    font-size: 24px;
+  }
+
+  html body #app .login-page .login-options {
+    margin-bottom: 6px;
   }
 }
 
