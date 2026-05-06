@@ -66,3 +66,17 @@ export interface GeneratePosterResponse {
   width: number;
   height: number;
 }
+
+export interface PosterHistoryItem {
+  taskId: string;
+  title: string;
+  subtitle: string;
+  status: "pending" | "success" | "error";
+  imageUrl?: string;
+  width: number;
+  height: number;
+  materialType: string;
+  assetIds: string[];
+  errorMessage?: string;
+  createdAt?: string;
+}

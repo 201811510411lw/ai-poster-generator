@@ -5,7 +5,7 @@ Java Spring Boot 主后端，负责登录认证、用户、素材、任务、文
 ## 技术栈
 
 - JDK 21
-- Spring Boot 3.3.13
+- Spring Boot 3.5.3
 - Spring Security
 - Spring Data JPA
 - MySQL
@@ -21,6 +21,8 @@ Java Spring Boot 主后端，负责登录认证、用户、素材、任务、文
 ```bash
 mysql -uroot -p < src/main/resources/db/init.sql
 ```
+
+`init.sql` 会创建用户表、素材表和海报生成任务相关表。旧数据库如果已经只导入过用户表，可以重新执行该脚本补齐缺失表。
 
 默认测试账号：
 
@@ -38,6 +40,7 @@ export MYSQL_URL='jdbc:mysql://localhost:3306/ai_poster_generator?useUnicode=tru
 export MYSQL_USERNAME='root'
 export MYSQL_PASSWORD='root'
 export JWT_SECRET='change-me-change-me-change-me-change-me-change-me-change-me'
+export OPENAI_API_KEY='your-openai-api-key'
 ```
 
 ### 3. 启动服务

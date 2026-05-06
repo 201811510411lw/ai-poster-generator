@@ -36,6 +36,27 @@ jwt:
   secret: ${JWT_SECRET:change-me-change-me-change-me-change-me-change-me-change-me}
   expiration-seconds: ${JWT_EXPIRATION_SECONDS:604800}
 
+storage:
+  type: ${STORAGE_TYPE:local}
+  local:
+    base-path: ${STORAGE_BASE_PATH:./data/uploads}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:/files}
+  tos:
+    region: ${TOS_REGION:cn-beijing}
+    endpoint: ${TOS_ENDPOINT:https://tos-cn-beijing.volces.com}
+    bucket: ${TOS_BUCKET:}
+    public-base-url: ${TOS_PUBLIC_BASE_URL:}
+    access-key: ${TOS_ACCESS_KEY:}
+    secret-key: ${TOS_SECRET_KEY:}
+
+openai:
+  image:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+    model: ${OPENAI_IMAGE_MODEL:gpt-image-1}
+    size: ${OPENAI_IMAGE_SIZE:auto}
+    quality: ${OPENAI_IMAGE_QUALITY:medium}
+
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
