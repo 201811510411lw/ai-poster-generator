@@ -7,13 +7,30 @@
     </template>
 
     <div class="flex h-full min-h-0 flex-col overflow-hidden">
+      <div class="grid shrink-0 grid-cols-2 gap-3">
+        <n-select
+          v-model:value="uploadAssetType"
+          size="small"
+          class="asset-filter-select w-full"
+          :options="assetTypeSelectOptions"
+          placeholder="上传素材类型"
+        />
+        <n-select
+          v-model:value="filterType"
+          size="small"
+          class="asset-filter-select w-full"
+          :options="filterOptions"
+          placeholder="按类型筛选"
+        />
+      </div>
+
       <n-upload
-        class="shrink-0"
+        class="mt-4 shrink-0"
         multiple
         directory-dnd
         :max="10"
         :show-file-list="false"
-        accept=".png,.jpg,.jpeg"
+        accept=".png,.jpg,.jpeg,image/png,image/jpeg"
         :custom-request="handleCustomUpload"
       >
         <n-upload-dragger>
@@ -22,7 +39,7 @@
               <Upload :size="23" />
             </div>
             <div class="mt-4 text-sm font-bold text-slate-700">拖拽或点击上传素材</div>
-            <p class="mt-2 text-xs leading-5 text-slate-400">支持 JPG / PNG 格式，最大 20MB</p>
+            <p class="mt-2 text-xs leading-5 text-slate-400">支持 JPG / PNG，最大 20MB。当前类型：{{ assetTypeLabelMap[uploadAssetType] }}</p>
             <n-button class="gradient-button mt-5 h-9 px-5 text-xs font-bold" type="primary">
               <template #icon>
                 <PlusCircle :size="15" />
@@ -37,17 +54,14 @@
         <button
           type="button"
           class="flex h-10 w-full items-center justify-start rounded-xl border border-violet-200 bg-violet-50/70 px-4 text-sm font-bold text-[var(--primary)] transition hover:border-violet-300 hover:bg-violet-50"
+          @click="filterType = 'all'"
         >
           <span>全部素材</span>
           <span class="ml-1 font-extrabold">({{ assets.length }})</span>
         </button>
-        <n-select
-          v-model:value="filterType"
-          size="small"
-          class="asset-filter-select w-full"
-          :options="filterOptions"
-          placeholder="按类型筛选"
-        />
+        <div class="flex h-10 items-center justify-start rounded-xl bg-slate-50 px-4 text-sm font-bold text-slate-500">
+          当前显示 {{ filteredAssets.length }} 个
+        </div>
       </div>
 
       <div class="mt-3 flex shrink-0 items-center justify-between rounded-2xl bg-orange-50/60 px-3 py-2 text-xs">
@@ -96,7 +110,7 @@
             </button>
 
             <div class="aspect-[4/3] overflow-hidden rounded-[14px] bg-slate-100">
-              <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" />
+              <img :src="asset.url" :alt="asset.filename" class="h-full w-full object-cover" loading="lazy" />
             </div>
             <div class="mt-2.5 min-w-0">
               <div class="truncate text-xs font-semibold text-slate-600" :title="asset.filename">{{ asset.filename }}</div>
@@ -107,7 +121,7 @@
                 <n-popselect
                   :value="asset.assetType"
                   :options="assetTypeSelectOptions"
-                  @update:value="(value) => store.updateAssetType(asset.id, value)"
+                  @update:value="(value) => handleUpdateAssetType(asset.id, value)"
                 >
                   <button class="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" @click.stop>
                     <SlidersHorizontal :size="13" />
@@ -145,12 +159,13 @@ import { assetTypeOptions } from "@/utils/constants";
 
 const { store, assets } = usePosterGenerator();
 const message = useMessage();
+const uploadAssetType = ref<AssetType>("product");
 const filterType = ref<AssetType | "all">("all");
 const deletingAssetId = ref<string | null>(null);
 
 const assetTypeSelectOptions = assetTypeOptions;
-const assetTypeLabelMap = Object.fromEntries(assetTypeOptions.map((item) => [item.value, item.label]));
-const filterOptions = [{ label: "按类型筛选", value: "all" }, ...assetTypeOptions];
+const assetTypeLabelMap = Object.fromEntries(assetTypeOptions.map((item) => [item.value, item.label])) as Record<AssetType, string>;
+const filterOptions = [{ label: "全部类型", value: "all" }, ...assetTypeOptions];
 
 const filteredAssets = computed(() => {
   if (filterType.value === "all") {
@@ -176,6 +191,12 @@ async function handleCustomUpload(options: UploadCustomRequestOptions) {
     return;
   }
 
+  if (!isSupportedImage(file)) {
+    message.error("仅支持 PNG、JPG、JPEG 图片");
+    options.onError();
+    return;
+  }
+
   if (file.size > 20 * 1024 * 1024) {
     message.error("单个文件不能超过 20MB");
     options.onError();
@@ -183,12 +204,21 @@ async function handleCustomUpload(options: UploadCustomRequestOptions) {
   }
 
   try {
-    await store.addAsset(file, "product");
+    await store.addAsset(file, uploadAssetType.value);
     options.onFinish();
     message.success("素材上传成功，已自动选中");
   } catch (error) {
     options.onError();
     message.error(error instanceof Error ? error.message : "素材上传失败");
+  }
+}
+
+async function handleUpdateAssetType(assetId: string, nextType: AssetType) {
+  try {
+    await store.updateAssetType(assetId, nextType);
+    message.success("素材类型已更新");
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : "素材类型更新失败");
   }
 }
 
@@ -202,6 +232,12 @@ async function handleDeleteAsset(assetId: string) {
   } finally {
     deletingAssetId.value = null;
   }
+}
+
+function isSupportedImage(file: File) {
+  const allowedTypes = new Set(["image/png", "image/jpeg"]);
+  const lowerName = file.name.toLowerCase();
+  return allowedTypes.has(file.type) && [".png", ".jpg", ".jpeg"].some((extension) => lowerName.endsWith(extension));
 }
 </script>
 
