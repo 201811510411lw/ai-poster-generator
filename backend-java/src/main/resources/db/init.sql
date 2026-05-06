@@ -83,5 +83,5 @@ CREATE TABLE IF NOT EXISTS poster_generation_asset (
   INDEX idx_poster_generation_asset_task (task_id, sort_order),
   INDEX idx_poster_generation_asset_asset (asset_id),
   CONSTRAINT fk_poster_generation_asset_task FOREIGN KEY (task_id) REFERENCES poster_generation_task(id) ON DELETE CASCADE,
-  CONSTRAINT fk_poster_generation_asset_asset FOREIGN KEY (asset_id) REFERENCES poster_asset(id)
+  CONSTRAINT fk_poster_generation_asset_asset FOREIGN KEY (asset_id) REFERENCES poster_asset(id) ON DELETE CASCADE
 );

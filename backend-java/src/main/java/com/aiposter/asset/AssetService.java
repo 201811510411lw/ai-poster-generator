@@ -2,6 +2,7 @@ package com.aiposter.asset;
 
 import com.aiposter.asset.dto.AssetUploadResponse;
 import com.aiposter.common.BusinessException;
+import com.aiposter.poster.PosterGenerationAssetRepository;
 import com.aiposter.storage.StorageService;
 import com.aiposter.storage.StoredFile;
 import org.slf4j.Logger;
@@ -27,12 +28,18 @@ public class AssetService {
     private static final Set<String> ALLOWED_ASSET_TYPES = Set.of(
             "product", "logo", "decoration", "background", "reference", "other"
     );
+    private static final String ASSET_STORAGE_FOLDER = "ai-poster-generator-image";
 
     private final AssetRepository assetRepository;
+    private final PosterGenerationAssetRepository posterGenerationAssetRepository;
     private final StorageService storageService;
 
-    public AssetService(AssetRepository assetRepository, StorageService storageService) {
+    public AssetService(
+            AssetRepository assetRepository,
+            PosterGenerationAssetRepository posterGenerationAssetRepository,
+            StorageService storageService) {
         this.assetRepository = assetRepository;
+        this.posterGenerationAssetRepository = posterGenerationAssetRepository;
         this.storageService = storageService;
     }
 
@@ -42,7 +49,7 @@ public class AssetService {
         validateFile(file);
 
         ImageSize imageSize = readImageSize(file);
-        StoredFile storedFile = storageService.store(file, "assets");
+        StoredFile storedFile = storageService.store(file, ASSET_STORAGE_FOLDER);
 
         try {
             AssetEntity asset = new AssetEntity();
@@ -86,8 +93,10 @@ public class AssetService {
     @Transactional
     public void delete(Long userId, Long assetId) {
         AssetEntity asset = findOwnedAsset(userId, assetId);
-        storageService.delete(asset.getStoragePath());
+        posterGenerationAssetRepository.deleteByAssetId(assetId);
         assetRepository.delete(asset);
+        assetRepository.flush();
+        storageService.delete(asset.getStoragePath());
         log.info("素材删除成功: userId={}, assetId={}, filename={}", userId, assetId, asset.getFilename());
     }
 
