@@ -1,4 +1,4 @@
-import { del, get, postForm } from "@/api/request";
+import { del, get, postForm, put } from "@/api/request";
 import type {
   Asset,
   AssetType,
@@ -44,6 +44,12 @@ export async function uploadPosterAsset(
     width: result.width,
     height: result.height,
   };
+}
+
+export async function updatePosterAssetType(assetId: string, assetType: AssetType): Promise<Asset> {
+  const params = new URLSearchParams({ assetType });
+  const result = await put<AssetUploadApiResponse>(`/api/assets/${assetId}/type?${params.toString()}`);
+  return toAsset(result);
 }
 
 export async function deletePosterAsset(assetId: string) {
