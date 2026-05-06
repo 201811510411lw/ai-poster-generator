@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import { deletePosterAsset, generatePoster, listPosterAssets, uploadPosterAsset } from "@/api/poster";
+import { deletePosterAsset, generatePoster, listPosterAssets, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
 import { materialSizeMap } from "@/utils/constants";
 import type {
   Asset,
@@ -86,10 +86,21 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     selectAsset(asset.id);
   }
 
-  function updateAssetType(assetId: string, nextType: AssetType) {
+  async function updateAssetType(assetId: string, nextType: AssetType) {
     const target = assets.value.find((item) => item.id === assetId);
-    if (target) {
-      target.assetType = nextType;
+    if (!target || target.assetType === nextType) {
+      return;
+    }
+
+    const previousType = target.assetType;
+    target.assetType = nextType;
+
+    try {
+      const updatedAsset = await updatePosterAssetType(assetId, nextType);
+      Object.assign(target, updatedAsset);
+    } catch (error) {
+      target.assetType = previousType;
+      throw error;
     }
   }
 
