@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
+import { REQUEST_CANCELED_MESSAGE } from "@/api/request";
 import { deletePosterAsset, generatePoster, listPosterAssets, listPosterHistory, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
 import { materialSizeMap } from "@/utils/constants";
 import type {
@@ -39,14 +40,23 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   const generationStatus = ref<GenerationStatus>("idle");
   const generatedImageUrl = ref<string | null>(null);
   const errorMessage = ref<string | null>(null);
+  const generationAbortController = ref<AbortController | null>(null);
 
   const selectedAssets = computed(() => {
     const selectedSet = new Set(selectedAssetIds.value);
     return assets.value.filter((asset) => selectedSet.has(asset.id));
   });
 
+  const hasPosterContent = computed(() => {
+    return !!(title.value?.trim() || subtitle.value?.trim() || designRequirement.value?.trim());
+  });
+
   const canGenerate = computed(() => {
-    return width.value > 0 && height.value > 0 && !!(title.value || subtitle.value || designRequirement.value);
+    return generationStatus.value !== "generating"
+      && width.value > 0
+      && height.value > 0
+      && hasPosterContent.value
+      && selectedAssetIds.value.length > 0;
   });
 
   function setMaterialType(type: MaterialType) {
@@ -162,6 +172,22 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   }
 
   async function generate() {
+    if (generationStatus.value === "generating") {
+      return;
+    }
+
+    if (selectedAssetIds.value.length === 0) {
+      errorMessage.value = "请先选择至少 1 个素材再生成";
+      throw new Error(errorMessage.value);
+    }
+
+    if (!hasPosterContent.value) {
+      errorMessage.value = "请至少填写标题、副标题或设计要求";
+      throw new Error(errorMessage.value);
+    }
+
+    const abortController = new AbortController();
+    generationAbortController.value = abortController;
     generationStatus.value = "generating";
     errorMessage.value = null;
 
@@ -182,16 +208,39 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
         assetIds: selectedAssetIds.value,
       };
 
-      const response = await generatePoster(payload);
+      const response = await generatePoster(payload, abortController.signal);
       generatedImageUrl.value = response.imageUrl;
       width.value = response.width;
       height.value = response.height;
       generationStatus.value = "success";
       await loadHistory(true);
     } catch (error) {
+      if (error instanceof Error && error.message === REQUEST_CANCELED_MESSAGE) {
+        generationStatus.value = "canceled";
+        errorMessage.value = null;
+        return;
+      }
+
       generationStatus.value = "error";
       errorMessage.value = error instanceof Error ? error.message : "生成失败，请稍后重试";
+      throw error;
+    } finally {
+      if (generationAbortController.value === abortController) {
+        generationAbortController.value = null;
+      }
     }
+  }
+
+  function cancelGeneration() {
+    if (generationStatus.value !== "generating") {
+      return false;
+    }
+
+    generationAbortController.value?.abort();
+    generationStatus.value = "canceled";
+    errorMessage.value = null;
+    generationAbortController.value = null;
+    return true;
   }
 
   return {
@@ -230,5 +279,6 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     clearSelectedAssets,
     removeAsset,
     generate,
+    cancelGeneration,
   };
 });
