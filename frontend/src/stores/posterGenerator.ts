@@ -203,7 +203,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     }
   }
 
-  async function previewPrompt() {
+  async function previewFinalPrompt() {
     if (!canPreviewPrompt.value) {
       if (!hasPosterContent.value) {
         errorMessage.value = "请至少填写标题、副标题或设计要求";
@@ -332,7 +332,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     toggleAssetSelection,
     clearSelectedAssets,
     removeAsset,
-    previewPrompt,
+    previewFinalPrompt,
     generate,
     cancelGeneration,
   };
