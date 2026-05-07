@@ -67,6 +67,10 @@ export interface GeneratePosterResponse {
   height: number;
 }
 
+export interface PromptPreviewResponse {
+  prompt: string;
+}
+
 export interface PosterHistoryItem {
   taskId: string;
   title: string;
