@@ -65,7 +65,7 @@
         </div>
       </n-form>
 
-      <div class="mt-4 grid shrink-0 gap-3 border-t border-slate-100 pt-4 xl:grid-cols-[1fr_150px]">
+      <div class="mt-4 grid shrink-0 gap-3 border-t border-slate-100 pt-4 xl:grid-cols-[1fr_150px_150px]">
         <n-button
           class="gradient-button h-11 w-full text-[15px] font-bold"
           type="primary"
@@ -78,6 +78,19 @@
             <Sparkles :size="17" />
           </template>
           {{ buttonText }}
+        </n-button>
+        <n-button
+          class="h-11 font-bold"
+          size="large"
+          secondary
+          :loading="promptPreviewLoading"
+          :disabled="!canPreviewPrompt"
+          @click="handlePreviewPrompt"
+        >
+          <template #icon>
+            <Eye :size="16" />
+          </template>
+          预览提示词
         </n-button>
         <n-button
           v-if="isGenerating"
@@ -97,14 +110,35 @@
         </n-button>
       </div>
     </div>
+
+    <n-modal v-model:show="promptPreviewVisible" preset="card" title="最终提示词预览" class="max-w-3xl">
+      <div class="space-y-4">
+        <p class="text-sm leading-6 text-slate-500">
+          这里展示的是后端实际组装出的 prompt。生成时会使用同一套模板，并结合你当前填写的活动、风格、尺寸和已选素材信息。
+        </p>
+        <n-input
+          :value="promptPreview"
+          type="textarea"
+          readonly
+          :autosize="{ minRows: 14, maxRows: 22 }"
+          class="font-mono text-xs leading-6"
+        />
+        <div class="flex justify-end gap-3">
+          <n-button secondary @click="promptPreviewVisible = false">关闭</n-button>
+          <n-button type="primary" :disabled="!promptPreview" @click="handleCopyPrompt">
+            复制提示词
+          </n-button>
+        </div>
+      </div>
+    </n-modal>
   </SectionCard>
 </template>
 
 <script setup lang="ts">
 import type { MaterialType } from "@/types/poster";
 import { computed, ref } from "vue";
-import { RotateCcw, Sparkles } from "lucide-vue-next";
-import { NButton, NForm, NFormItem, NInput, NInputNumber, NSelect, useMessage } from "naive-ui";
+import { Eye, RotateCcw, Sparkles } from "lucide-vue-next";
+import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, useMessage } from "naive-ui";
 import SectionCard from "@/components/SectionCard.vue";
 import { usePosterGenerator } from "@/composables/usePosterGenerator";
 
@@ -126,11 +160,15 @@ const {
   activityDescription,
   designRequirement,
   generationStatus,
+  promptPreview,
+  promptPreviewLoading,
   canGenerate,
+  canPreviewPrompt,
   selectedAssetIds,
 } = usePosterGenerator();
 const message = useMessage();
 const isCustomSize = ref(materialType.value === "custom");
+const promptPreviewVisible = ref(false);
 
 const designerMaterialOptions: Array<{ label: string; value: MaterialType }> = [
   { label: "海报", value: "poster" },
@@ -199,6 +237,29 @@ function handleReset() {
   designRequirement.value = "";
   isCustomSize.value = false;
   message.info("生成设置已重置");
+}
+
+async function handlePreviewPrompt() {
+  try {
+    await store.previewPrompt();
+    promptPreviewVisible.value = true;
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : "提示词预览失败");
+  }
+}
+
+async function handleCopyPrompt() {
+  if (!promptPreview.value) {
+    message.warning("暂无可复制的提示词");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(promptPreview.value);
+    message.success("提示词已复制");
+  } catch {
+    message.error("复制失败，请手动选择文本复制");
+  }
 }
 
 async function handleGenerate() {
