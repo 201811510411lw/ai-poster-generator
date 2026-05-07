@@ -241,7 +241,7 @@ function handleReset() {
 
 async function handlePreviewPrompt() {
   try {
-    await store.previewPrompt();
+    await store.previewFinalPrompt();
     promptPreviewVisible.value = true;
   } catch (error) {
     message.error(error instanceof Error ? error.message : "提示词预览失败");
