@@ -5,6 +5,7 @@ import type {
   GeneratePosterPayload,
   GeneratePosterResponse,
   PosterHistoryItem,
+  PromptPreviewResponse,
   UploadAssetPayload,
   UploadAssetResponse,
 } from "@/types/poster";
@@ -77,14 +78,18 @@ export async function deletePosterAsset(assetId: string) {
   await del<void>(`/api/assets/${assetId}`);
 }
 
+function toGeneratePosterApiPayload(payload: GeneratePosterPayload) {
+  return {
+    ...payload,
+    assetIds: payload.assetIds.map((assetId) => Number(assetId)).filter((assetId) => Number.isFinite(assetId)),
+  };
+}
+
 export async function generatePoster(
   payload: GeneratePosterPayload,
   signal?: AbortSignal,
 ): Promise<GeneratePosterResponse> {
-  const result = await post<GeneratePosterApiResponse>("/api/posters/generate", {
-    ...payload,
-    assetIds: payload.assetIds.map((assetId) => Number(assetId)).filter((assetId) => Number.isFinite(assetId)),
-  }, { signal });
+  const result = await post<GeneratePosterApiResponse>("/api/posters/generate", toGeneratePosterApiPayload(payload), { signal });
 
   return {
     success: true,
@@ -94,6 +99,10 @@ export async function generatePoster(
     width: result.width,
     height: result.height,
   };
+}
+
+export async function previewPosterPrompt(payload: GeneratePosterPayload): Promise<PromptPreviewResponse> {
+  return post<PromptPreviewResponse>("/api/posters/prompt-preview", toGeneratePosterApiPayload(payload));
 }
 
 export async function listPosterHistory(): Promise<PosterHistoryItem[]> {
