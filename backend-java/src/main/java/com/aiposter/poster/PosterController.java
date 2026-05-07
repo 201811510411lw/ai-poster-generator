@@ -4,6 +4,7 @@ import com.aiposter.common.ApiResponse;
 import com.aiposter.poster.dto.GeneratePosterRequest;
 import com.aiposter.poster.dto.GeneratePosterResponse;
 import com.aiposter.poster.dto.PosterHistoryItemResponse;
+import com.aiposter.poster.dto.PromptPreviewResponse;
 import com.aiposter.security.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,13 @@ public class PosterController {
             @AuthenticationPrincipal LoginUser loginUser,
             @RequestBody GeneratePosterRequest request) {
         return ApiResponse.ok("海报生成成功", posterService.generate(loginUser.getId(), request));
+    }
+
+    @PostMapping("/prompt-preview")
+    public ApiResponse<PromptPreviewResponse> previewPrompt(
+            @AuthenticationPrincipal LoginUser loginUser,
+            @RequestBody GeneratePosterRequest request) {
+        return ApiResponse.ok("提示词生成成功", posterService.previewPrompt(loginUser.getId(), request));
     }
 
     @GetMapping("/history")
