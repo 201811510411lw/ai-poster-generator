@@ -1,7 +1,7 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { REQUEST_CANCELED_MESSAGE } from "@/api/request";
-import { deletePosterAsset, generatePoster, listPosterAssets, listPosterHistory, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
+import { deletePosterAsset, generatePoster, listPosterAssets, listPosterHistory, previewPosterPrompt, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
 import { materialSizeMap } from "@/utils/constants";
 import type {
   Asset,
@@ -41,6 +41,8 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   const generatedImageUrl = ref<string | null>(null);
   const errorMessage = ref<string | null>(null);
   const generationAbortController = ref<AbortController | null>(null);
+  const promptPreview = ref("");
+  const promptPreviewLoading = ref(false);
 
   const selectedAssets = computed(() => {
     const selectedSet = new Set(selectedAssetIds.value);
@@ -63,12 +65,38 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
       && selectedAssetIds.value.length > 0;
   });
 
+  const canPreviewPrompt = computed(() => {
+    return !isGenerationRequestActive.value
+      && !promptPreviewLoading.value
+      && width.value > 0
+      && height.value > 0
+      && hasPosterContent.value;
+  });
+
   function setMaterialType(type: MaterialType) {
     materialType.value = type;
     if (type !== "custom") {
       width.value = materialSizeMap[type].width;
       height.value = materialSizeMap[type].height;
     }
+  }
+
+  function buildGeneratePayload(): GeneratePosterPayload {
+    return {
+      materialType: materialType.value,
+      width: width.value,
+      height: height.value,
+      mainColor: mainColor.value,
+      subColor: subColor.value,
+      brandDescription: brandDescription.value,
+      styleDescription: styleDescription.value,
+      title: title.value,
+      subtitle: subtitle.value,
+      activityDescription: activityDescription.value,
+      designRequirement: designRequirement.value,
+      outputFormat: outputFormat.value,
+      assetIds: selectedAssetIds.value,
+    };
   }
 
   async function loadAssets(force = false) {
@@ -175,6 +203,34 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     }
   }
 
+  async function previewPrompt() {
+    if (!canPreviewPrompt.value) {
+      if (!hasPosterContent.value) {
+        errorMessage.value = "请至少填写标题、副标题或设计要求";
+        throw new Error(errorMessage.value);
+      }
+      if (width.value <= 0 || height.value <= 0) {
+        errorMessage.value = "海报尺寸不合法";
+        throw new Error(errorMessage.value);
+      }
+      return promptPreview.value;
+    }
+
+    promptPreviewLoading.value = true;
+    errorMessage.value = null;
+
+    try {
+      const response = await previewPosterPrompt(buildGeneratePayload());
+      promptPreview.value = response.prompt;
+      return response.prompt;
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : "提示词预览失败";
+      throw error;
+    } finally {
+      promptPreviewLoading.value = false;
+    }
+  }
+
   async function generate() {
     if (isGenerationRequestActive.value) {
       return;
@@ -196,23 +252,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     errorMessage.value = null;
 
     try {
-      const payload: GeneratePosterPayload = {
-        materialType: materialType.value,
-        width: width.value,
-        height: height.value,
-        mainColor: mainColor.value,
-        subColor: subColor.value,
-        brandDescription: brandDescription.value,
-        styleDescription: styleDescription.value,
-        title: title.value,
-        subtitle: subtitle.value,
-        activityDescription: activityDescription.value,
-        designRequirement: designRequirement.value,
-        outputFormat: outputFormat.value,
-        assetIds: selectedAssetIds.value,
-      };
-
-      const response = await generatePoster(payload, abortController.signal);
+      const response = await generatePoster(buildGeneratePayload(), abortController.signal);
       generatedImageUrl.value = response.imageUrl;
       width.value = response.width;
       height.value = response.height;
@@ -275,9 +315,14 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     generationStatus,
     generatedImageUrl,
     errorMessage,
+    generationAbortController,
+    promptPreview,
+    promptPreviewLoading,
     canGenerate,
+    canPreviewPrompt,
     isGenerationRequestActive,
     setMaterialType,
+    buildGeneratePayload,
     loadAssets,
     loadHistory,
     addAsset,
@@ -287,6 +332,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     toggleAssetSelection,
     clearSelectedAssets,
     removeAsset,
+    previewPrompt,
     generate,
     cancelGeneration,
   };
