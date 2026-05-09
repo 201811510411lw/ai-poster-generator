@@ -4,6 +4,7 @@ import java.util.List;
 
 public class GeneratePosterRequest {
     private String materialType;
+    private String promptTemplate;
     private Integer width;
     private Integer height;
     private String mainColor;
@@ -19,6 +20,8 @@ public class GeneratePosterRequest {
 
     public String getMaterialType() { return materialType; }
     public void setMaterialType(String materialType) { this.materialType = materialType; }
+    public String getPromptTemplate() { return promptTemplate; }
+    public void setPromptTemplate(String promptTemplate) { this.promptTemplate = promptTemplate; }
     public Integer getWidth() { return width; }
     public void setWidth(Integer width) { this.width = width; }
     public Integer getHeight() { return height; }
