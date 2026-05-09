@@ -30,6 +30,17 @@
             </n-form-item>
           </div>
 
+          <n-form-item label="提示词模板">
+            <n-select
+              v-model:value="promptTemplate"
+              :options="promptTemplateOptions"
+              placeholder="选择 GPT-Image2 结构化模板"
+            />
+            <p class="mt-2 text-xs leading-5 text-slate-400">
+              模板思路来自 awesome-gpt-image-2 的 Prompt-as-Code 结构，会影响“预览提示词”和最终生成。
+            </p>
+          </n-form-item>
+
           <div v-if="isCustomSize" class="grid gap-4 xl:grid-cols-2">
             <n-form-item label="自定义宽度">
               <n-input-number v-model:value="width" :min="1" class="w-full" placeholder="单位 px" />
@@ -135,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MaterialType } from "@/types/poster";
+import type { MaterialType, PromptTemplateType } from "@/types/poster";
 import { computed, ref } from "vue";
 import { Eye, RotateCcw, Sparkles } from "lucide-vue-next";
 import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, useMessage } from "naive-ui";
@@ -152,6 +163,7 @@ interface SizePreset {
 const {
   store,
   materialType,
+  promptTemplate,
   outputFormat,
   width,
   height,
@@ -175,6 +187,14 @@ const designerMaterialOptions: Array<{ label: string; value: MaterialType }> = [
   { label: "易拉宝", value: "rollup" },
   { label: "社媒图", value: "tv" },
   { label: "电商主图", value: "main" },
+];
+
+const promptTemplateOptions: Array<{ label: string; value: PromptTemplateType }> = [
+  { label: "通用商业海报", value: "commercial-poster" },
+  { label: "产品促销 / 电商海报", value: "product-campaign" },
+  { label: "概念字体海报", value: "typography-poster" },
+  { label: "信息图海报", value: "infographic-poster" },
+  { label: "社媒传播海报", value: "social-media-poster" },
 ];
 
 const formatOptions = [
@@ -230,6 +250,7 @@ function applySizePreset(preset: SizePreset) {
 
 function handleReset() {
   store.setMaterialType("poster");
+  promptTemplate.value = "commercial-poster";
   outputFormat.value = "png";
   title.value = "";
   subtitle.value = "";
