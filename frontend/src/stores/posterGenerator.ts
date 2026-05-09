@@ -11,6 +11,7 @@ import type {
   MaterialType,
   OutputFormat,
   PosterHistoryItem,
+  PromptTemplateType,
 } from "@/types/poster";
 
 export const usePosterGeneratorStore = defineStore("poster-generator", () => {
@@ -29,6 +30,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   const historyLoading = ref(false);
 
   const materialType = ref<MaterialType>("poster");
+  const promptTemplate = ref<PromptTemplateType>("commercial-poster");
   const width = ref(1080);
   const height = ref(1920);
   const title = ref("爆款零食限时特价");
@@ -84,6 +86,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   function buildGeneratePayload(): GeneratePosterPayload {
     return {
       materialType: materialType.value,
+      promptTemplate: promptTemplate.value,
       width: width.value,
       height: height.value,
       mainColor: mainColor.value,
@@ -305,6 +308,7 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     historyLoaded,
     historyLoading,
     materialType,
+    promptTemplate,
     width,
     height,
     title,
