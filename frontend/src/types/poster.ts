@@ -16,6 +16,13 @@ export type AssetType =
 
 export type OutputFormat = "png" | "jpg";
 
+export type PromptTemplateType =
+  | "commercial-poster"
+  | "product-campaign"
+  | "typography-poster"
+  | "infographic-poster"
+  | "social-media-poster";
+
 export type GenerationStatus = "idle" | "generating" | "success" | "error" | "canceled";
 
 export interface Asset {
@@ -44,6 +51,7 @@ export interface UploadAssetResponse {
 
 export interface GeneratePosterPayload {
   materialType: MaterialType;
+  promptTemplate: PromptTemplateType;
   width: number;
   height: number;
   mainColor: string;
