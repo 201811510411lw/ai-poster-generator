@@ -5,6 +5,7 @@ import type {
   GeneratePosterPayload,
   GeneratePosterResponse,
   PosterHistoryItem,
+  PromptPreviewResponse,
   UploadAssetPayload,
   UploadAssetResponse,
 } from "@/types/poster";
@@ -34,7 +35,7 @@ interface PosterHistoryApiResponse {
   taskId: number;
   title?: string;
   subtitle?: string;
-  status: "pending" | "success" | "failed" | "error";
+  status: "pending" | "success" | "failed" | "error" | "cancelled";
   imageUrl?: string;
   width: number;
   height: number;
@@ -77,13 +78,18 @@ export async function deletePosterAsset(assetId: string) {
   await del<void>(`/api/assets/${assetId}`);
 }
 
-export async function generatePoster(
-  payload: GeneratePosterPayload,
-): Promise<GeneratePosterResponse> {
-  const result = await post<GeneratePosterApiResponse>("/api/posters/generate", {
+function toGeneratePosterApiPayload(payload: GeneratePosterPayload) {
+  return {
     ...payload,
     assetIds: payload.assetIds.map((assetId) => Number(assetId)).filter((assetId) => Number.isFinite(assetId)),
-  });
+  };
+}
+
+export async function generatePoster(
+  payload: GeneratePosterPayload,
+  signal?: AbortSignal,
+): Promise<GeneratePosterResponse> {
+  const result = await post<GeneratePosterApiResponse>("/api/posters/generate", toGeneratePosterApiPayload(payload), { signal });
 
   return {
     success: true,
@@ -95,13 +101,17 @@ export async function generatePoster(
   };
 }
 
+export async function previewPosterPrompt(payload: GeneratePosterPayload): Promise<PromptPreviewResponse> {
+  return post<PromptPreviewResponse>("/api/posters/prompt-preview", toGeneratePosterApiPayload(payload));
+}
+
 export async function listPosterHistory(): Promise<PosterHistoryItem[]> {
   const result = await get<PosterHistoryApiResponse[]>("/api/posters/history");
   return result.map((item) => ({
     taskId: String(item.taskId),
     title: item.title || "未命名海报",
     subtitle: item.subtitle || "",
-    status: item.status === "failed" ? "error" : item.status,
+    status: item.status === "failed" || item.status === "cancelled" ? "error" : item.status,
     imageUrl: item.imageUrl ? resolveAssetUrl(item.imageUrl) : undefined,
     width: item.width,
     height: item.height,

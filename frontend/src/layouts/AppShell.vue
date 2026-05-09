@@ -33,20 +33,24 @@
 
         <nav class="hidden flex-1 justify-center lg:flex">
           <div class="flex items-center rounded-[20px] bg-orange-50/70 p-1 ring-1 ring-orange-100">
-            <div
+            <button
               v-for="step in workflowSteps"
-              :key="step.label"
+              :key="step.key"
+              type="button"
               class="flex h-10 items-center gap-2 rounded-2xl px-5 text-sm font-bold transition"
-              :class="step.active ? 'bg-white text-[var(--primary)] shadow-sm ring-1 ring-orange-100' : 'text-[#8A6A52]'"
+              :class="activeStep === step.key
+                ? 'bg-white text-[var(--primary)] shadow-sm ring-1 ring-orange-100'
+                : 'text-[#8A6A52] hover:bg-white/70 hover:text-[var(--primary)]'"
+              @click.stop="handleWorkflowStepClick(step.key)"
             >
               <span
                 class="grid h-5 w-5 place-items-center rounded-full text-[11px] font-extrabold"
-                :class="step.active ? 'bg-[var(--primary)] text-white' : 'bg-orange-100 text-[#9A7355]'"
+                :class="activeStep === step.key ? 'bg-[var(--primary)] text-white' : 'bg-orange-100 text-[#9A7355]'"
               >
                 {{ step.index }}
               </span>
               {{ step.label }}
-            </div>
+            </button>
           </div>
         </nav>
 
@@ -130,18 +134,25 @@ import { Bell, ChevronDown, LogOut, PlusSquare, Settings, Sun, UserRound } from 
 import { NButton, useMessage } from "naive-ui";
 import { useAuthStore } from "@/stores/auth";
 
+type WorkflowStepKey = "basic" | "assets" | "generate" | "result";
+
+const emit = defineEmits<{
+  (event: "workflow-step-click", key: WorkflowStepKey): void;
+}>();
+
 const router = useRouter();
 const message = useMessage();
 const auth = useAuthStore();
 const userMenuOpen = ref(false);
 const userButtonRef = ref<HTMLButtonElement | null>(null);
 const userMenuPosition = ref({ top: 64, right: 24 });
+const activeStep = ref<WorkflowStepKey>("basic");
 
-const workflowSteps = [
-  { index: 1, label: "基础设置", active: true },
-  { index: 2, label: "素材管理", active: false },
-  { index: 3, label: "生成设置", active: false },
-  { index: 4, label: "生成结果", active: false },
+const workflowSteps: Array<{ index: number; key: WorkflowStepKey; label: string }> = [
+  { index: 1, key: "basic", label: "基础设置" },
+  { index: 2, key: "assets", label: "素材管理" },
+  { index: 3, key: "generate", label: "生成设置" },
+  { index: 4, key: "result", label: "生成结果" },
 ];
 
 const userMenuItems = [
@@ -158,6 +169,11 @@ const userMenuStyle = computed(() => ({
   top: `${userMenuPosition.value.top}px`,
   right: `${userMenuPosition.value.right}px`,
 }));
+
+function handleWorkflowStepClick(key: WorkflowStepKey) {
+  activeStep.value = key;
+  emit("workflow-step-click", key);
+}
 
 function updateUserMenuPosition() {
   const rect = userButtonRef.value?.getBoundingClientRect();

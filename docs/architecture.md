@@ -1,10 +1,10 @@
 # AI 平面物料生成系统架构设计
 
-本文档基于 `requirement.txt` 的产品需求，结合 SeaTunnel Web 这类企业级 Web 管理平台的工程组织方式，明确本项目后续采用的前端、Java 后端、Python AI 服务和数据库的整体架构。
+本文档基于当前代码实现更新。当前 MVP 采用 Vue 前端 + Java Spring Boot 主后端 + MySQL + OpenAI 图片生成接口。Java 后端直接调用 OpenAI 图片模型，不再要求独立的 Python AI 服务。
 
 ## 1. 架构目标
 
-本系统第一阶段目标是跑通以下核心闭环：
+系统第一阶段目标是跑通以下核心闭环：
 
 ```text
 用户登录
@@ -15,38 +15,70 @@
   ↓
 创建 AI 生成任务
   ↓
-调用图像生成模型
+Java 后端调用图像生成模型
   ↓
-保存结果
+保存生成结果
   ↓
 前端预览和下载
 ```
 
 系统不是桌面端软件，也不是 ComfyUI 节点式工具，而是一个面向电脑端浏览器使用的 AI 平面物料生成 Web 系统。
 
-## 2. 总体技术架构
+## 2. 当前总体技术架构
 
-推荐采用前端、Java 主后端、Python AI 服务三层结构：
+当前 MVP 推荐采用两层应用架构：
 
 ```text
 Vue 前端
   ↓ HTTP / JSON / multipart
 Java Spring Boot 主后端
-  ↓ HTTP / JSON
-Python FastAPI AI 服务
-  ↓ SDK / HTTP
-OpenAI / Grok / ComfyUI / 本地模型
+  ├─ 登录 / JWT
+  ├─ 用户信息
+  ├─ 素材上传和元数据管理
+  ├─ 海报生成任务
+  ├─ Prompt 组装
+  ├─ 直接调用 OpenAI 图片生成接口
+  ├─ 生成图片保存
+  └─ 历史记录查询
+
+MySQL
+  └─ 用户、素材、任务、任务素材关联
+
+本地文件系统 / 对象存储
+  └─ 上传素材和生成图片
+```
+
+当前实际生成链路：
+
+```text
+POST /api/posters/generate
+  ↓
+PosterController
+  ↓
+PosterService 校验参数、读取素材、创建任务
+  ↓
+PosterPromptBuilder 组装 prompt
+  ↓
+OpenAiImageClient 调用 /v1/images/generations
+  ↓
+Java 解码 OpenAI 返回的 b64_json
+  ↓
+StorageService 保存生成图片
+  ↓
+更新任务状态 SUCCESS / FAILED
+  ↓
+返回 taskId、status、imageUrl、width、height
 ```
 
 其中：
 
-- Vue 负责页面展示和用户交互。
-- Java 负责登录、用户、权限、素材、任务、数据库、文件存储等主业务。
-- Python 负责 AI 图像生成、图片处理、多模型适配和后续本地模型扩展。
-- MySQL 保存用户、素材、任务、生成结果等业务数据。
-- 本地文件系统、MinIO、OSS 或 S3 保存上传素材和生成图片。
+- Vue 负责页面展示、表单交互、素材选择、生成状态展示和调用 Java 后端接口。
+- Java 负责登录、用户、权限、素材、任务、Prompt、模型调用、数据库、文件存储等主业务。
+- MySQL 保存用户、素材、生成任务、任务素材关联等业务数据。
+- 本地文件系统、MinIO、OSS、TOS 或 S3 可以保存上传素材和生成图片。
+- Python AI 服务当前不是 MVP 必需组件，仅作为未来扩展选项。
 
-## 3. 推荐目录结构
+## 3. 当前目录结构
 
 ```text
 ai-poster-generator/
@@ -61,12 +93,11 @@ ai-poster-generator/
       user/
       asset/
       poster/
-      task/
-      ai/
+      openai/
       storage/
     src/main/resources/
       application.yml
-      application-dev.yml
+      db/init.sql
 
   frontend/
     package.json
@@ -74,36 +105,21 @@ ai-poster-generator/
       api/
       router/
       stores/
-      layouts/
       views/
         login/
         poster-generator/
-        tasks/
-        assets/
-
-  ai-service-python/
-    app/
-      main.py
-      api/
-      providers/
-      schemas/
-      services/
-      utils/
-    requirements.txt
 
   docs/
     architecture.md
-    api.md
-    database.md
 ```
 
-当前仓库已经有 Vue 前端代码，后续可以逐步迁移到 `frontend/` 目录，或者暂时保持现有结构，等 Java 后端和 Python AI 服务加入后再整理为 monorepo。
+如果后续需要接入 ComfyUI、Stable Diffusion/Flux 本地模型、复杂图片后处理或多模型网关，可以再新增 `ai-service-python/`，但当前不建议为了 MVP 提前引入。
 
 ## 4. 各层职责边界
 
 ### 4.1 Vue 前端
 
-前端只负责页面展示、表单交互和调用 Java 后端接口，不直接访问 Python AI 服务，也不直接访问 OpenAI、Grok 或本地模型。
+前端只负责页面展示、表单交互和调用 Java 后端接口，不直接访问 OpenAI、Grok、本地模型或对象存储私有接口。
 
 主要职责：
 
@@ -113,23 +129,35 @@ ai-poster-generator/
 4. 基础配置区。
 5. 生成参数区。
 6. 结果预览区。
-7. 任务历史页。
-8. 素材管理页。
-9. token 保存和请求拦截。
-10. 401 跳转登录页。
+7. 任务历史展示。
+8. token 保存和请求拦截。
+9. 401 跳转登录页。
 
-推荐前端模块：
+当前主要前端接口文件：
 
 ```text
-src/api/request.ts        # Axios 实例、token、错误处理
-src/api/auth.ts           # 登录、当前用户、退出登录
-src/api/assets.ts         # 素材上传、删除、查询
-src/api/poster.ts         # 创建生成任务
-src/api/tasks.ts          # 查询任务状态、历史记录、下载结果
-src/router/index.ts       # 路由和登录守卫
-src/stores/auth.ts        # 登录用户状态
-src/stores/poster.ts      # 海报生成表单状态
-src/layouts/AppShell.vue  # 系统主布局
+frontend/src/api/request.ts          # Axios 实例、token、错误处理
+frontend/src/api/auth.ts             # 登录、当前用户、退出登录
+frontend/src/api/poster.ts           # 素材、生成、历史接口
+frontend/src/router/index.ts         # 路由和登录守卫
+frontend/src/stores/auth.ts          # 登录用户状态
+frontend/src/stores/posterGenerator.ts # 海报生成表单、素材和历史状态
+```
+
+当前前端调用的主要后端接口：
+
+```http
+POST /api/auth/login
+GET  /api/auth/me
+POST /api/auth/logout
+
+POST   /api/assets/upload
+GET    /api/assets
+PUT    /api/assets/{assetId}/type
+DELETE /api/assets/{assetId}
+
+POST /api/posters/generate
+GET  /api/posters/history
 ```
 
 ### 4.2 Java Spring Boot 主后端
@@ -145,33 +173,27 @@ Java 后端是系统的业务中心。前端所有业务请求都先进入 Java 
 5. 素材元数据入库。
 6. 海报生成任务创建。
 7. 参数校验。
-8. 物料类型和尺寸规则管理。
-9. 调用 Python AI 服务。
-10. 生成结果保存。
-11. 任务状态更新。
-12. 历史记录查询。
-13. 图片下载。
+8. 物料类型和模型尺寸规则管理。
+9. Prompt 组装。
+10. 直接调用 OpenAI 图片生成接口。
+11. 解码并保存生成结果。
+12. 任务状态更新。
+13. 历史记录查询。
 14. 统一异常处理和接口返回。
 
-推荐 Java 包结构：
+当前 Java 包结构重点：
 
 ```text
 common/
   ApiResponse.java
-  ErrorCode.java
   BusinessException.java
   GlobalExceptionHandler.java
-
-config/
-  WebConfig.java
-  CorsConfig.java
-  JacksonConfig.java
 
 security/
   JwtTokenProvider.java
   JwtAuthenticationFilter.java
   SecurityConfig.java
-  LoginUserContext.java
+  LoginUser.java
 
 auth/
   AuthController.java
@@ -181,83 +203,51 @@ auth/
   dto/CurrentUserResponse.java
 
 user/
-  UserController.java
-  UserService.java
   UserEntity.java
-  UserMapper.java
+  UserRepository.java
 
 asset/
   AssetController.java
   AssetService.java
   AssetEntity.java
-  AssetMapper.java
+  AssetRepository.java
   dto/AssetUploadResponse.java
 
 poster/
   PosterController.java
   PosterService.java
-  PromptBuilder.java
-  MaterialRuleService.java
+  PosterPromptBuilder.java
+  PosterTaskEntity.java
+  PosterTaskRepository.java
+  PosterGenerationAssetEntity.java
+  PosterGenerationAssetRepository.java
   dto/GeneratePosterRequest.java
   dto/GeneratePosterResponse.java
+  dto/PosterHistoryItemResponse.java
 
-task/
-  PosterTaskController.java
-  PosterTaskService.java
-  PosterTaskEntity.java
-  PosterTaskMapper.java
-
-ai/
-  AiImageClient.java
-  dto/AiGenerateRequest.java
-  dto/AiGenerateResponse.java
+openai/
+  OpenAiImageClient.java
+  OpenAiImageProperties.java
 
 storage/
   StorageService.java
   LocalStorageService.java
-  MinioStorageService.java
   StoredFile.java
 ```
 
-### 4.3 Python FastAPI AI 服务
+### 4.3 Python AI 服务的定位
 
-Python AI 服务只负责 AI 能力和图片处理，不直接管理用户、权限、业务任务和数据库主数据。
+当前 MVP 不需要 Python AI 服务。
 
-主要职责：
+后续只有在出现以下需求时，才建议重新引入 `ai-service-python/`：
 
-1. 接收 Java 后端传入的生成参数。
-2. 接收素材 URL 或素材文件引用。
-3. 组装或增强模型 prompt。
-4. 调用 OpenAI 图像模型。
-5. 调用 Grok 图像模型。
-6. 后续接入 ComfyUI、Flux、Stable Diffusion 或本地模型。
-7. 图片压缩、格式转换、尺寸处理。
-8. 返回图片 base64、临时文件路径或结果 URL 给 Java。
+1. 接入 ComfyUI 工作流。
+2. 接入 Stable Diffusion、Flux 等本地模型。
+3. 做复杂图像后处理，例如抠图、扩图、超分、批量压缩、格式转换。
+4. 构建多模型网关，对接 OpenAI、Grok、ComfyUI、本地模型等多个 provider。
+5. Java SDK 或 HTTP 调用无法满足某些模型能力，而 Python 生态更合适。
 
-推荐 Python 结构：
-
-```text
-app/main.py
-app/api/image.py
-app/schemas/image.py
-app/services/prompt_service.py
-app/services/image_service.py
-app/providers/base.py
-app/providers/openai_provider.py
-app/providers/grok_provider.py
-app/providers/comfyui_provider.py
-app/providers/mock_provider.py
-app/utils/image_io.py
-app/utils/http_client.py
-```
-
-Python 暴露给 Java 的内部接口：
-
-```http
-POST /ai/generate-image
-POST /ai/edit-image
-GET  /health
-```
+引入 Python 服务后的推荐职责是只处理 AI 能力和图片处理，不直接管理用户、权限、任务主数据和业务数据库。
 
 ## 5. 登录系统设计
 
@@ -293,7 +283,7 @@ GET  /api/auth/me
 POST /api/auth/logout
 ```
 
-### 5.3 用户表建议
+### 5.3 用户表
 
 ```sql
 CREATE TABLE sys_user (
@@ -313,7 +303,7 @@ CREATE TABLE sys_user (
 
 ## 6. 素材上传设计
 
-对应需求文档中的素材上传区，素材由 Java 后端接收并保存。
+素材由 Java 后端接收并保存。
 
 ### 6.1 上传流程
 
@@ -342,7 +332,7 @@ Java 读取图片尺寸
 - 支持 PNG、JPG、JPEG。
 - 记录素材类型：product、logo、decoration、background、reference、other。
 
-### 6.3 素材表建议
+### 6.3 素材表
 
 ```sql
 CREATE TABLE poster_asset (
@@ -357,97 +347,87 @@ CREATE TABLE poster_asset (
   height INT,
   storage_path VARCHAR(512) NOT NULL,
   access_url VARCHAR(512),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_poster_asset_user_created (user_id, created_at),
+  CONSTRAINT fk_poster_asset_user FOREIGN KEY (user_id) REFERENCES sys_user(id)
 );
 ```
 
 ## 7. 海报生成任务设计
 
-生成任务由 Java 创建和管理，Python 只负责执行 AI 生成。
+生成任务由 Java 创建、执行和管理。当前 MVP 使用同步生成：`POST /api/posters/generate` 会等待 OpenAI 图片接口返回结果后再响应前端。
 
-### 7.1 推荐任务流程
+### 7.1 当前任务流程
 
 ```text
 Vue 点击生成
   ↓
-POST /api/poster/generate
+POST /api/posters/generate
   ↓
 Java 校验参数
   ↓
-Java 创建 poster_task，状态 PENDING
+Java 查询并校验用户选择的素材
   ↓
-Java 组装业务 prompt 和素材 URL
+Java 创建 poster_generation_task，状态 PENDING
   ↓
-Java 调用 Python /ai/generate-image
+Java 保存 poster_generation_asset 关联
   ↓
-Python 调用 OpenAI/Grok/本地模型
+Java 组装业务 prompt
   ↓
-Python 返回 image_base64 或临时结果
+Java 调用 OpenAI /v1/images/generations
   ↓
-Java 保存生成图片
+OpenAI 返回 b64_json
   ↓
-Java 更新 poster_task 为 SUCCESS 或 FAILED
+Java 解码图片并保存到 StorageService
   ↓
-Vue 查询任务状态并展示结果
+Java 更新任务为 SUCCESS 或 FAILED
+  ↓
+Vue 展示生成结果并刷新历史记录
 ```
-
-第一期为了降低复杂度，可以先做同步生成：`POST /api/poster/generate` 等待 Python 返回结果后直接返回。
-
-第二期再改成异步任务：创建任务后前端轮询 `GET /api/poster/tasks/{taskId}`。
 
 ### 7.2 Java 对前端接口
 
 ```http
-POST /api/poster/generate
-GET  /api/poster/tasks/{taskId}
-GET  /api/poster/tasks
-GET  /api/poster/tasks/{taskId}/download
+POST /api/posters/generate
+GET  /api/posters/history
 ```
 
-### 7.3 Java 调 Python 接口
+后续如果生成时间变长，可以扩展为异步任务：
 
 ```http
-POST /ai/generate-image
+POST /api/posters/generate       # 创建任务并立即返回 taskId
+GET  /api/posters/tasks/{taskId} # 查询任务状态
+GET  /api/posters/tasks          # 查询任务列表
+GET  /api/posters/tasks/{taskId}/download
 ```
 
-请求示例：
+### 7.3 Java 调 OpenAI 图片接口
+
+当前由 `OpenAiImageClient` 直接调用：
+
+```http
+POST /v1/images/generations
+```
+
+请求参数由 Java 配置和业务参数共同决定：
 
 ```json
 {
-  "provider": "openai",
-  "model": "gpt-image-1.5",
-  "materialType": "poster",
-  "width": 1080,
-  "height": 1920,
-  "prompt": "请生成一张竖版宣传海报...",
-  "assetUrls": [
-    "http://localhost:8080/files/assets/1.png",
-    "http://localhost:8080/files/assets/2.png"
-  ],
-  "outputFormat": "png"
+  "model": "gpt-image-1",
+  "prompt": "Create a polished commercial Chinese poster...",
+  "size": "1024x1536",
+  "quality": "medium"
 }
 ```
 
-返回示例：
+接口返回的 `b64_json` 由 Java 解码并保存为生成图片。
 
-```json
-{
-  "success": true,
-  "provider": "openai",
-  "model": "gpt-image-1.5",
-  "mimeType": "image/png",
-  "imageBase64": "...",
-  "usage": {
-    "inputTokens": 0,
-    "outputTokens": 0
-  }
-}
-```
+### 7.4 任务表
 
-### 7.4 任务表建议
+当前任务表为 `poster_generation_task`：
 
 ```sql
-CREATE TABLE poster_task (
+CREATE TABLE poster_generation_task (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
   material_type VARCHAR(32) NOT NULL,
@@ -455,23 +435,34 @@ CREATE TABLE poster_task (
   height INT NOT NULL,
   main_color VARCHAR(32),
   sub_color VARCHAR(32),
-  brand_description TEXT,
-  style_description TEXT,
+  brand_description VARCHAR(1024),
+  style_description VARCHAR(1024),
   title VARCHAR(255),
   subtitle VARCHAR(255),
-  activity_description TEXT,
-  design_requirement TEXT,
-  output_format VARCHAR(16) DEFAULT 'png',
-  asset_ids JSON,
-  prompt TEXT,
-  provider VARCHAR(32),
-  model VARCHAR(64),
-  status VARCHAR(32) NOT NULL,
-  result_image_url VARCHAR(512),
+  activity_description VARCHAR(1024),
+  design_requirement VARCHAR(2048),
+  output_format VARCHAR(16) NOT NULL DEFAULT 'png',
+  prompt_text TEXT,
+  status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+  result_filename VARCHAR(255),
   result_storage_path VARCHAR(512),
-  error_message TEXT,
+  result_image_url VARCHAR(512),
+  error_message VARCHAR(1024),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+任务和素材通过 `poster_generation_asset` 关联：
+
+```sql
+CREATE TABLE poster_generation_asset (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  task_id BIGINT NOT NULL,
+  asset_id BIGINT NOT NULL,
+  asset_role VARCHAR(32) NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -479,86 +470,89 @@ CREATE TABLE poster_task (
 
 ```text
 PENDING
-GENERATING
 SUCCESS
 FAILED
+```
+
+如果后续改异步生成，可以增加：
+
+```text
+GENERATING
 CANCELED
 ```
 
 ## 8. Prompt 组装职责
 
-Prompt 分两层：
+当前 Prompt 由 Java 的 `PosterPromptBuilder` 负责组装。
 
-1. Java 负责根据业务参数生成结构化业务 prompt。
-2. Python 可以根据不同模型做二次适配。
+Java 会根据以下信息生成结构化 prompt：
 
-Java 生成基础 prompt：
+1. 物料类型。
+2. 画布尺寸。
+3. 主色和辅助色。
+4. 品牌描述。
+5. 视觉风格。
+6. 标题。
+7. 副标题。
+8. 活动说明。
+9. 设计要求。
+10. 用户选择的素材摘要。
+
+当前素材只作为文本摘要进入 prompt，例如素材类型、原文件名和图片尺寸。模型还没有直接看到用户上传的图片内容。
+
+这一点非常重要：
 
 ```text
-请生成一张竖版宣传海报，画面比例为 1080:1920。
-整体风格年轻、活力、促销感强。
-主色使用 #E60012，辅助色使用 #FFD700。
-使用上传的产品图作为画面主体，保持产品外观自然清晰。
-标题文字为“夏日焕新季”，副标题为“全场低至7折”。
-活动说明为“4月23日-5月10日”。
-构图要求：产品放中间，标题在上方，底部保留活动信息。
-画面需要清晰、干净、有设计感，适合门店宣传使用。
-避免杂乱排版、错误文字、模糊图片、低清晰度和不相关元素。
+当前实现 = 文本生成图片
+不是 = 基于上传图片的图像编辑 / 图像参考生成
 ```
 
-Python 根据 provider 做模型适配，例如：
-
-- OpenAI provider：适配图片输入、输出格式、尺寸参数。
-- Grok provider：适配接口参数和多图合成方式。
-- ComfyUI provider：适配工作流 JSON。
-- Mock provider：开发阶段返回示例图。
+如果产品要求“必须使用上传的商品图或 logo”，下一步需要改造 `OpenAiImageClient`，接入支持图片输入的模型接口，把用户上传的素材文件作为真实图片输入传给模型。
 
 ## 9. 配置设计
 
 ### 9.1 Java application.yml
+
+当前主要配置：
 
 ```yaml
 server:
   port: 8080
 
 spring:
-  application:
-    name: ai-poster-generator
   datasource:
     url: ${MYSQL_URL:jdbc:mysql://localhost:3306/ai_poster_generator?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
-    driver-class-name: com.mysql.cj.jdbc.Driver
   servlet:
     multipart:
       max-file-size: 20MB
       max-request-size: 200MB
 
 jwt:
-  secret: ${JWT_SECRET:change-me-in-production}
-  expiration-seconds: 604800
+  secret: ${JWT_SECRET:change-me-change-me-change-me-change-me-change-me-change-me}
+  expiration-seconds: ${JWT_EXPIRATION_SECONDS:604800}
 
 storage:
-  type: local
+  type: ${STORAGE_TYPE:local}
   local:
     base-path: ${STORAGE_BASE_PATH:./data/uploads}
-    public-base-url: ${STORAGE_PUBLIC_BASE_URL:http://localhost:8080/files}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:/files}
 
-ai-service:
-  base-url: ${AI_SERVICE_BASE_URL:http://localhost:9000}
-  timeout-seconds: 120
+openai:
+  image:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+    model: ${OPENAI_IMAGE_MODEL:gpt-image-1}
+    size: ${OPENAI_IMAGE_SIZE:auto}
+    quality: ${OPENAI_IMAGE_QUALITY:medium}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 ```
 
-### 9.2 Python .env
-
-```env
-AI_PROVIDER=mock
-OPENAI_API_KEY=
-XAI_API_KEY=
-OUTPUT_DIR=./data/results
-```
-
-密钥不要提交到 GitHub。仓库中只保留 `.env.example`。
+密钥不要提交到 GitHub。仓库中只保留 `.env.example` 或环境变量说明。
 
 ## 10. MVP 阶段拆分
 
@@ -588,23 +582,25 @@ OUTPUT_DIR=./data/results
 4. 图片元数据入库。
 5. 前端上传组件接真实接口。
 
-### 第 4 阶段：Python AI 服务
+### 第 4 阶段：Java 图片生成闭环
 
-1. FastAPI 项目初始化。
-2. `/health`。
-3. `/ai/generate-image`。
-4. Mock provider。
-5. OpenAI provider。
-6. Grok provider。
+1. `/api/posters/generate`。
+2. Java 创建任务。
+3. Java 组装 prompt。
+4. Java 直接调用 OpenAI 图片生成接口。
+5. Java 保存结果图片。
+6. 前端展示结果并刷新历史记录。
 
-### 第 5 阶段：生成任务闭环
+### 第 5 阶段：增强素材参与生成
 
-1. Java 创建任务。
-2. Java 组装 prompt。
-3. Java 调 Python。
-4. Python 返回图片。
-5. Java 保存结果。
-6. 前端展示和下载。
+1. 让上传素材作为真实图片输入传给模型。
+2. 支持商品图、logo、参考图等不同素材角色。
+3. 根据模型能力选择 image edit / image reference / multi-image input 方案。
+4. 处理模型输出格式、真实图片尺寸和用户目标画布尺寸的差异。
+
+### 第 6 阶段：可选 Python AI 服务
+
+只有在需要本地模型、ComfyUI、复杂后处理或多模型网关时，再新增 Python AI 服务。
 
 ## 11. 与 requirement.txt 的关系
 
@@ -612,16 +608,16 @@ OUTPUT_DIR=./data/results
 
 本文档补充系统工程设计，主要解决：
 
-1. 采用 Vue + Java + Python 的最终技术路线。
-2. 明确登录、用户、素材、任务、AI 服务的职责归属。
-3. 明确 MySQL 中需要保存哪些业务数据。
-4. 明确 Java 和 Python 如何协作。
-5. 明确 MVP 阶段开发顺序。
+1. 当前采用 Vue + Java + MySQL + OpenAI 图片接口的技术路线。
+2. 明确登录、用户、素材、任务、模型调用的职责归属。
+3. 明确 MySQL 中保存的业务数据。
+4. 明确当前 Java 直连 OpenAI 的生成链路。
+5. 明确 Python AI 服务是未来扩展项，不是当前 MVP 必需项。
 
 后续建议把 `requirement.txt` 中的后端技术方案更新为：
 
 ```text
-Java Spring Boot 主后端 + MySQL + Python FastAPI AI 服务
+Vue 前端 + Java Spring Boot 主后端 + MySQL + OpenAI 图片生成接口
 ```
 
-而不是原先的 Node.js / NestJS / FastAPI 单后端方案。
+而不是 Node.js / NestJS / FastAPI 单后端方案，也不是默认依赖 Python FastAPI AI 服务的三层方案。

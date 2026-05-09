@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import { deletePosterAsset, generatePoster, listPosterAssets, listPosterHistory, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
+import { REQUEST_CANCELED_MESSAGE } from "@/api/request";
+import { deletePosterAsset, generatePoster, listPosterAssets, listPosterHistory, previewPosterPrompt, updatePosterAssetType, uploadPosterAsset } from "@/api/poster";
 import { materialSizeMap } from "@/utils/constants";
 import type {
   Asset,
@@ -39,14 +40,37 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
   const generationStatus = ref<GenerationStatus>("idle");
   const generatedImageUrl = ref<string | null>(null);
   const errorMessage = ref<string | null>(null);
+  const generationAbortController = ref<AbortController | null>(null);
+  const promptPreview = ref("");
+  const promptPreviewLoading = ref(false);
 
   const selectedAssets = computed(() => {
     const selectedSet = new Set(selectedAssetIds.value);
     return assets.value.filter((asset) => selectedSet.has(asset.id));
   });
 
+  const hasPosterContent = computed(() => {
+    return !!(title.value?.trim() || subtitle.value?.trim() || designRequirement.value?.trim());
+  });
+
+  const isGenerationRequestActive = computed(() => {
+    return generationStatus.value === "generating" && !!generationAbortController.value;
+  });
+
   const canGenerate = computed(() => {
-    return width.value > 0 && height.value > 0 && !!(title.value || subtitle.value || designRequirement.value);
+    return !isGenerationRequestActive.value
+      && width.value > 0
+      && height.value > 0
+      && hasPosterContent.value
+      && selectedAssetIds.value.length > 0;
+  });
+
+  const canPreviewPrompt = computed(() => {
+    return !isGenerationRequestActive.value
+      && !promptPreviewLoading.value
+      && width.value > 0
+      && height.value > 0
+      && hasPosterContent.value;
   });
 
   function setMaterialType(type: MaterialType) {
@@ -55,6 +79,24 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
       width.value = materialSizeMap[type].width;
       height.value = materialSizeMap[type].height;
     }
+  }
+
+  function buildGeneratePayload(): GeneratePosterPayload {
+    return {
+      materialType: materialType.value,
+      width: width.value,
+      height: height.value,
+      mainColor: mainColor.value,
+      subColor: subColor.value,
+      brandDescription: brandDescription.value,
+      styleDescription: styleDescription.value,
+      title: title.value,
+      subtitle: subtitle.value,
+      activityDescription: activityDescription.value,
+      designRequirement: designRequirement.value,
+      outputFormat: outputFormat.value,
+      assetIds: selectedAssetIds.value,
+    };
   }
 
   async function loadAssets(force = false) {
@@ -161,37 +203,92 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     }
   }
 
+  async function previewFinalPrompt() {
+    if (!canPreviewPrompt.value) {
+      if (!hasPosterContent.value) {
+        errorMessage.value = "请至少填写标题、副标题或设计要求";
+        throw new Error(errorMessage.value);
+      }
+      if (width.value <= 0 || height.value <= 0) {
+        errorMessage.value = "海报尺寸不合法";
+        throw new Error(errorMessage.value);
+      }
+      return promptPreview.value;
+    }
+
+    promptPreviewLoading.value = true;
+    errorMessage.value = null;
+
+    try {
+      const response = await previewPosterPrompt(buildGeneratePayload());
+      promptPreview.value = response.prompt;
+      return response.prompt;
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : "提示词预览失败";
+      throw error;
+    } finally {
+      promptPreviewLoading.value = false;
+    }
+  }
+
   async function generate() {
+    if (isGenerationRequestActive.value) {
+      return;
+    }
+
+    if (selectedAssetIds.value.length === 0) {
+      errorMessage.value = "请先选择至少 1 个素材再生成";
+      throw new Error(errorMessage.value);
+    }
+
+    if (!hasPosterContent.value) {
+      errorMessage.value = "请至少填写标题、副标题或设计要求";
+      throw new Error(errorMessage.value);
+    }
+
+    const abortController = new AbortController();
+    generationAbortController.value = abortController;
     generationStatus.value = "generating";
     errorMessage.value = null;
 
     try {
-      const payload: GeneratePosterPayload = {
-        materialType: materialType.value,
-        width: width.value,
-        height: height.value,
-        mainColor: mainColor.value,
-        subColor: subColor.value,
-        brandDescription: brandDescription.value,
-        styleDescription: styleDescription.value,
-        title: title.value,
-        subtitle: subtitle.value,
-        activityDescription: activityDescription.value,
-        designRequirement: designRequirement.value,
-        outputFormat: outputFormat.value,
-        assetIds: selectedAssetIds.value,
-      };
-
-      const response = await generatePoster(payload);
+      const response = await generatePoster(buildGeneratePayload(), abortController.signal);
       generatedImageUrl.value = response.imageUrl;
       width.value = response.width;
       height.value = response.height;
       generationStatus.value = "success";
       await loadHistory(true);
     } catch (error) {
+      if (error instanceof Error && error.message === REQUEST_CANCELED_MESSAGE) {
+        generationStatus.value = "canceled";
+        errorMessage.value = null;
+        return;
+      }
+
       generationStatus.value = "error";
       errorMessage.value = error instanceof Error ? error.message : "生成失败，请稍后重试";
+      throw error;
+    } finally {
+      if (generationAbortController.value === abortController) {
+        generationAbortController.value = null;
+      }
+
+      if (generationStatus.value === "generating") {
+        generationStatus.value = generatedImageUrl.value ? "success" : "idle";
+      }
     }
+  }
+
+  function cancelGeneration() {
+    if (!isGenerationRequestActive.value) {
+      return false;
+    }
+
+    generationAbortController.value?.abort();
+    generationStatus.value = "canceled";
+    errorMessage.value = null;
+    generationAbortController.value = null;
+    return true;
   }
 
   return {
@@ -218,8 +315,14 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     generationStatus,
     generatedImageUrl,
     errorMessage,
+    generationAbortController,
+    promptPreview,
+    promptPreviewLoading,
     canGenerate,
+    canPreviewPrompt,
+    isGenerationRequestActive,
     setMaterialType,
+    buildGeneratePayload,
     loadAssets,
     loadHistory,
     addAsset,
@@ -229,6 +332,8 @@ export const usePosterGeneratorStore = defineStore("poster-generator", () => {
     toggleAssetSelection,
     clearSelectedAssets,
     removeAsset,
+    previewFinalPrompt,
     generate,
+    cancelGeneration,
   };
 });

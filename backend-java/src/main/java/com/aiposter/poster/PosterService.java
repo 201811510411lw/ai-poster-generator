@@ -7,6 +7,7 @@ import com.aiposter.openai.OpenAiImageClient;
 import com.aiposter.poster.dto.GeneratePosterRequest;
 import com.aiposter.poster.dto.GeneratePosterResponse;
 import com.aiposter.poster.dto.PosterHistoryItemResponse;
+import com.aiposter.poster.dto.PromptPreviewResponse;
 import com.aiposter.storage.StorageService;
 import com.aiposter.storage.StoredFile;
 import org.slf4j.Logger;
@@ -86,6 +87,13 @@ public class PosterService {
             log.warn("海报生成失败: userId={}, taskId={}, error={}", userId, task.getId(), ex.getMessage());
             throw ex;
         }
+    }
+
+    public PromptPreviewResponse previewPrompt(Long userId, GeneratePosterRequest request) {
+        validateRequest(request);
+        List<AssetEntity> selectedAssets = resolveSelectedAssets(userId, request.getAssetIds());
+        String prompt = promptBuilder.build(request, selectedAssets);
+        return new PromptPreviewResponse(prompt);
     }
 
     public List<PosterHistoryItemResponse> listHistory(Long userId) {

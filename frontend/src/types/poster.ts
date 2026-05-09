@@ -16,7 +16,7 @@ export type AssetType =
 
 export type OutputFormat = "png" | "jpg";
 
-export type GenerationStatus = "idle" | "generating" | "success" | "error";
+export type GenerationStatus = "idle" | "generating" | "success" | "error" | "canceled";
 
 export interface Asset {
   id: string;
@@ -65,6 +65,10 @@ export interface GeneratePosterResponse {
   imageUrl: string;
   width: number;
   height: number;
+}
+
+export interface PromptPreviewResponse {
+  prompt: string;
 }
 
 export interface PosterHistoryItem {
